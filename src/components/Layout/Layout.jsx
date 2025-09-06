@@ -5,7 +5,7 @@ import { Outlet } from "react-router-dom"
 import { Box, CssBaseline, useMediaQuery, useTheme } from "@mui/material"
 import Sidebar from "./Sidebar"
 import Header from "./Header"
-import SessionManager from "../auth/SessionManager"
+import SessionManager from "../Auth/SessionManager"
 
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
