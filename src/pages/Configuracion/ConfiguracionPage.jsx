@@ -36,7 +36,7 @@ import {
 } from "@mui/icons-material"
 import { useAuth } from "../../contexts/AuthContext"
 import configuracionService from "../../services/configuracionService"
-import ChangePasswordModal from "../../components/auth/ChangePasswordModal"
+import ChangePasswordModal from "../../components/Auth/ChangePasswordModal"
 
 const businessSchema = yup.object({
   nombreNegocio: yup.string().required("El nombre del negocio es requerido"),
