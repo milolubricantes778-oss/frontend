@@ -25,7 +25,7 @@ import {
   Logout as LogoutIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material"
-import ChangePasswordModal from "../auth/ChangePasswordModal"
+import ChangePasswordModal from "../Auth/ChangePasswordModal"
 
 function Header({ onMenuClick }) {
   const { user, logout, isAdmin } = useAuth()
