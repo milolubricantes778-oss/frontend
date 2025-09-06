@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { clientesService } from "../services/clientesService.js"
-import { useStandardizedErrorHandler } from "../utils/standardizedErrorHandler"
+import { useStandardizedErrorHandler } from "../utils/StandardizedErrorHandler.js"
 import { useToast } from "./useToast"
 
 export const useClientes = () => {

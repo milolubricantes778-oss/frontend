@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react"
 import serviciosService from "../services/serviciosService.js"
-import { useStandardizedErrorHandler } from "../utils/standardizedErrorHandler"
+import { useStandardizedErrorHandler } from "../utils/StandardizedErrorHandler"
 import { useToast } from "./useToast"
 
 export const useServicios = () => {
