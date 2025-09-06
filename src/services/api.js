@@ -1,7 +1,7 @@
 import axios from "axios"
 import secureStorage from "../utils/secureStorage"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://api.milolubricantes.site/api"
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.milolubricantes.site/api"
 
 // Crear instancia de axios
 const api = axios.create({
