@@ -1,40 +1,52 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, User, Car, Phone, MapPin, CreditCard, Calendar, Gauge, Loader2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  Avatar,
+  IconButton,
+  CircularProgress,
+  Alert,
+  Grid,
+  Divider,
+} from "@mui/material"
+import {
+  Close as CloseIcon,
+  Person as PersonIcon,
+  DirectionsCar as CarIcon,
+  Phone as PhoneIcon,
+  LocationOn as LocationIcon,
+  CreditCard as CreditCardIcon,
+  CalendarToday as CalendarIcon,
+  Speed as SpeedIcon,
+} from "@mui/icons-material"
 import vehiculosService from "../../services/vehiculosService"
 
 const ClienteDetalleModal = ({ open, onClose, cliente }) => {
-  const [activeTab, setActiveTab] = useState("general")
+  const [activeTab, setActiveTab] = useState(0)
   const [vehiculos, setVehiculos] = useState([])
   const [loadingVehiculos, setLoadingVehiculos] = useState(false)
   const [errorVehiculos, setErrorVehiculos] = useState(null)
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue)
 
-    const handleEscape = (e) => {
-      if (e.key === "Escape") onClose()
-    }
-
-    if (open) {
-      document.addEventListener("keydown", handleEscape)
-    }
-
-    return () => {
-      document.body.style.overflow = "unset"
-      document.removeEventListener("keydown", handleEscape)
-    }
-  }, [open, onClose])
-
-  const handleTabChange = (value) => {
-    setActiveTab(value)
-
-    if (value === "vehiculos" && vehiculos.length === 0) {
+    if (newValue === 1 && vehiculos.length === 0) {
       loadVehiculos()
     }
   }
@@ -56,7 +68,7 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
   useEffect(() => {
     if (!open) {
       setVehiculos([])
-      setActiveTab("general")
+      setActiveTab(0)
       setErrorVehiculos(null)
     }
   }, [open])
@@ -75,240 +87,351 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
     return new Intl.NumberFormat("es-AR").format(number)
   }
 
-  if (!cliente || !open) return null
+  if (!cliente) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative w-full max-w-4xl max-h-[90vh] mx-4 bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
-        <div className="bg-[#d84315] text-white p-6 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-white/20 flex items-center justify-center">
-              <User className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold mb-1">
-                {cliente.nombre} {cliente.apellido}
-              </h2>
-              <p className="text-white/90 text-sm">Información completa del cliente</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/20 h-10 w-10 rounded-lg flex items-center justify-center transition-colors"
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          bgcolor: "#d84315",
+          color: "white",
+          p: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0, // Prevent header from shrinking
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar
+            sx={{
+              bgcolor: "rgba(255, 255, 255, 0.2)",
+              width: 48,
+              height: 48,
+            }}
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            <PersonIcon />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" fontWeight="bold">
+              {cliente.nombre} {cliente.apellido}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Información completa del cliente
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: "white",
+            "&:hover": {
+              bgcolor: "rgba(255, 255, 255, 0.2)",
+            },
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="grid grid-cols-2 mx-6 mt-4 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => handleTabChange("general")}
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "general" ? "bg-white text-[#d84315] shadow-sm" : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <User className="w-4 h-4" />
-              General
-            </button>
-            <button
-              onClick={() => handleTabChange("vehiculos")}
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                activeTab === "vehiculos" ? "bg-white text-[#d84315] shadow-sm" : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Car className="w-4 h-4" />
-              Vehículos {vehiculos.length > 0 && `(${vehiculos.length})`}
-            </button>
-          </div>
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: "divider",
+          px: 3,
+          pt: 2,
+          flexShrink: 0, // Prevent tabs from shrinking
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          sx={{
+            "& .MuiTab-root": {
+              color: "#666",
+              "&.Mui-selected": {
+                color: "#d84315",
+              },
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#d84315",
+            },
+          }}
+        >
+          <Tab icon={<PersonIcon />} label="General" iconPosition="start" />
+          <Tab
+            icon={<CarIcon />}
+            label={`Vehículos ${vehiculos.length > 0 ? `(${vehiculos.length})` : ""}`}
+            iconPosition="start"
+          />
+        </Tabs>
+      </Box>
 
-          <div className="flex-1 overflow-y-auto max-h-[calc(90vh-200px)]">
-            {activeTab === "general" && (
-              <div className="p-6 space-y-6">
-                {/* Estado del Cliente */}
-                <div className="flex items-center gap-4 mb-6">
-                  <h3 className="text-lg font-semibold text-[#171717]">Estado del Cliente</h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      cliente.activo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {cliente.activo ? "Activo" : "Inactivo"}
-                  </span>
-                </div>
+      <DialogContent
+        sx={{
+          p: 0,
+          flex: 1, // Take remaining space
+          overflow: "hidden", // Prevent outer scroll
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box
+          sx={{
+            p: 3,
+            flex: 1,
+            overflowY: "auto", // Only content scrolls
+            overflowX: "hidden",
+          }}
+        >
+          {activeTab === 0 && (
+            <Box sx={{ space: 3 }}>
+              {/* Estado del Cliente */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                <Typography variant="h6" sx={{ color: "#171717" }}>
+                  Estado del Cliente
+                </Typography>
+                <Chip
+                  label={cliente.activo ? "Activo" : "Inactivo"}
+                  color={cliente.activo ? "success" : "error"}
+                  size="small"
+                />
+              </Box>
 
-                <div className="border-t border-gray-200"></div>
+              <Divider sx={{ mb: 3 }} />
 
+              <Grid container spacing={3}>
                 {/* Información Personal */}
-                <div className="bg-white border border-gray-200 rounded-lg">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="flex items-center gap-3 text-[#171717] font-semibold">
-                      <div className="p-2 rounded-lg bg-[#d84315]/10 text-[#d84315]">
-                        <User className="w-5 h-5" />
-                      </div>
-                      Información Personal
-                    </h3>
-                  </div>
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Nombre Completo</p>
-                      <p className="font-medium">
-                        {cliente.nombre} {cliente.apellido}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-gray-600" />
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">DNI</p>
-                        <p className="font-medium font-mono">{cliente.dni || "No especificado"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Grid item xs={12}>
+                  <Card elevation={2}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Avatar sx={{ bgcolor: "#d84315", width: 40, height: 40 }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Typography variant="h6" sx={{ color: "#171717" }}>
+                          Información Personal
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                            Nombre Completo
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {cliente.nombre} {cliente.apellido}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <CreditCardIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                            <Box>
+                              <Typography variant="body2" color="textSecondary" gutterBottom>
+                                DNI
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium" sx={{ fontFamily: "monospace" }}>
+                                {cliente.dni || "No especificado"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
                 {/* Información de Contacto */}
-                <div className="bg-white border border-gray-200 rounded-lg">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="flex items-center gap-3 text-[#171717] font-semibold">
-                      <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
-                        <Phone className="w-5 h-5" />
-                      </div>
-                      Información de Contacto
-                    </h3>
-                  </div>
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-600" />
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Teléfono</p>
-                        <p className="font-medium">{cliente.telefono || "No especificado"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-gray-600 mt-1" />
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Dirección</p>
-                        <p className="font-medium">{cliente.direccion || "No especificada"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <Grid item xs={12}>
+                  <Card elevation={2}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Avatar sx={{ bgcolor: "#2196f3", width: 40, height: 40 }}>
+                          <PhoneIcon />
+                        </Avatar>
+                        <Typography variant="h6" sx={{ color: "#171717" }}>
+                          Información de Contacto
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <PhoneIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+                            <Box>
+                              <Typography variant="body2" color="textSecondary" gutterBottom>
+                                Teléfono
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {cliente.telefono || "No especificado"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                            <LocationIcon sx={{ color: "text.secondary", fontSize: 20, mt: 0.5 }} />
+                            <Box>
+                              <Typography variant="body2" color="textSecondary" gutterBottom>
+                                Dirección
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {cliente.direccion || "No especificada"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
 
                 {/* Información del Sistema */}
-                <div className="bg-white border border-gray-200 rounded-lg">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="flex items-center gap-3 text-[#171717] font-semibold">
-                      <div className="p-2 rounded-lg bg-green-100 text-green-600">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      Información del Sistema
-                    </h3>
-                  </div>
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Fecha de Registro</p>
-                      <p className="font-medium">{formatDate(cliente.created_at)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Última Actualización</p>
-                      <p className="font-medium">{formatDate(cliente.updated_at)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                <Grid item xs={12}>
+                  <Card elevation={2}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                        <Avatar sx={{ bgcolor: "#4caf50", width: 40, height: 40 }}>
+                          <CalendarIcon />
+                        </Avatar>
+                        <Typography variant="h6" sx={{ color: "#171717" }}>
+                          Información del Sistema
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                            Fecha de Registro
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {formatDate(cliente.created_at)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                          <Typography variant="body2" color="textSecondary" gutterBottom>
+                            Última Actualización
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {formatDate(cliente.updated_at)}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
 
-            {activeTab === "vehiculos" && (
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-[#171717] mb-4">Vehículos del Cliente</h3>
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="h6" sx={{ color: "#171717", mb: 3 }}>
+                Vehículos del Cliente
+              </Typography>
 
-                {loadingVehiculos && (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#d84315]" />
-                  </div>
-                )}
+              {loadingVehiculos && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress sx={{ color: "#d84315" }} />
+                </Box>
+              )}
 
-                {errorVehiculos && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                    <p className="text-red-800">{errorVehiculos}</p>
-                  </div>
-                )}
+              {errorVehiculos && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {errorVehiculos}
+                </Alert>
+              )}
 
-                {!loadingVehiculos && !errorVehiculos && vehiculos.length === 0 && (
-                  <div className="bg-white border border-gray-200 rounded-lg">
-                    <div className="p-8 text-center">
-                      <Car className="w-12 h-12 text-[#d84315] mx-auto mb-4" />
-                      <h4 className="text-lg font-semibold text-[#171717] mb-2">Sin Vehículos Registrados</h4>
-                      <p className="text-gray-600">Este cliente no tiene vehículos asociados</p>
-                    </div>
-                  </div>
-                )}
+              {!loadingVehiculos && !errorVehiculos && vehiculos.length === 0 && (
+                <Card elevation={2}>
+                  <CardContent>
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <CarIcon sx={{ fontSize: 48, color: "#d84315", mb: 2 }} />
+                      <Typography variant="h6" sx={{ color: "#171717", mb: 1 }}>
+                        Sin Vehículos Registrados
+                      </Typography>
+                      <Typography color="textSecondary">Este cliente no tiene vehículos asociados</Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
 
-                {!loadingVehiculos && vehiculos.length > 0 && (
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-semibold text-[#171717]">Vehículo</th>
-                            <th className="text-left py-3 px-4 font-semibold text-[#171717]">Patente</th>
-                            <th className="text-left py-3 px-4 font-semibold text-[#171717]">Año</th>
-                            <th className="text-left py-3 px-4 font-semibold text-[#171717]">Kilometraje</th>
-                            <th className="text-left py-3 px-4 font-semibold text-[#171717]">Estado</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {vehiculos.map((vehiculo) => (
-                            <tr
-                              key={vehiculo.id}
-                              className="border-b border-gray-100 hover:bg-[#d84315]/5 transition-colors"
-                            >
-                              <td className="py-3 px-4">
-                                <div>
-                                  <p className="font-medium">
-                                    {vehiculo.marca} {vehiculo.modelo}
-                                  </p>
-                                  {vehiculo.numero_motor && (
-                                    <p className="text-xs text-gray-600">Motor: {vehiculo.numero_motor}</p>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <p className="font-medium font-mono">{vehiculo.patente}</p>
-                              </td>
-                              <td className="py-3 px-4">
-                                <p>{vehiculo.año || "N/A"}</p>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  <Gauge className="w-4 h-4 text-gray-600" />
-                                  <p>{formatNumber(vehiculo.kilometraje)} km</p>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    vehiculo.activo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  {vehiculo.activo ? "Activo" : "Inactivo"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              {!loadingVehiculos && vehiculos.length > 0 && (
+                <TableContainer component={Paper} elevation={2}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "#f5f5f5" }}>
+                        <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Vehículo</TableCell>
+                        <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Patente</TableCell>
+                        <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Año</TableCell>
+                        <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Kilometraje</TableCell>
+                        <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Estado</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {vehiculos.map((vehiculo) => (
+                        <TableRow
+                          key={vehiculo.id}
+                          sx={{
+                            "&:hover": {
+                              bgcolor: "rgba(216, 67, 21, 0.05)",
+                            },
+                          }}
+                        >
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" fontWeight="medium">
+                                {vehiculo.marca} {vehiculo.modelo}
+                              </Typography>
+                              {vehiculo.numero_motor && (
+                                <Typography variant="caption" color="textSecondary">
+                                  Motor: {vehiculo.numero_motor}
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight="medium" sx={{ fontFamily: "monospace" }}>
+                              {vehiculo.patente}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{vehiculo.año || "N/A"}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <SpeedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                              <Typography variant="body2">{formatNumber(vehiculo.kilometraje)} km</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={vehiculo.activo ? "Activo" : "Inactivo"}
+                              color={vehiculo.activo ? "success" : "error"}
+                              size="small"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
+        </Box>
+      </DialogContent>
+    </Dialog>
   )
 }
 

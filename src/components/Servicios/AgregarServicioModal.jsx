@@ -1,7 +1,36 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, Wrench, CheckCircle, Package, X, Search } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import {
+  Dialog,
+  DialogContent,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  IconButton,
+  Chip,
+  Switch,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Paper,
+  Portal,
+} from "@mui/material"
+import {
+  Add as AddIcon,
+  Build as BuildIcon,
+  CheckCircle as CheckCircleIcon,
+  Inventory as InventoryIcon,
+  Close as CloseIcon,
+  Search as SearchIcon,
+} from "@mui/icons-material"
 
 const AgregarServicioModal = ({ isOpen, onClose, onAddItem, tiposServicios = [] }) => {
   const [currentItem, setCurrentItem] = useState({
@@ -16,46 +45,64 @@ const AgregarServicioModal = ({ isOpen, onClose, onAddItem, tiposServicios = [] 
   const [filteredTipos, setFilteredTipos] = useState([])
   const [showTiposList, setShowTiposList] = useState(false)
   const [newProducto, setNewProducto] = useState("")
+  const [selectedTipoServicio, setSelectedTipoServicio] = useState(null)
+
+  const searchFieldRef = useRef(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
 
   useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        handleClose()
+      }
+    }
+
     if (isOpen) {
-      document.body.style.overflow = "hidden"
-
-      const handleEscape = (e) => {
-        if (e.key === "Escape") {
-          handleClose()
-        }
-      }
-
       document.addEventListener("keydown", handleEscape)
-
-      return () => {
-        document.body.style.overflow = "unset"
-        document.removeEventListener("keydown", handleEscape)
-      }
+      return () => document.removeEventListener("keydown", handleEscape)
     }
   }, [isOpen])
 
   useEffect(() => {
-    if (searchTerm) {
+    if (searchTerm && !selectedTipoServicio) {
       const filtered = tiposServicios.filter((tipo) => tipo.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
       setFilteredTipos(filtered)
       setShowTiposList(true)
+
+      if (searchFieldRef.current) {
+        const rect = searchFieldRef.current.getBoundingClientRect()
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        })
+      }
     } else {
       setFilteredTipos([])
       setShowTiposList(false)
     }
-  }, [searchTerm, tiposServicios])
+  }, [searchTerm, tiposServicios, selectedTipoServicio])
 
   const handleSelectTipoServicio = (tipo) => {
+    setSelectedTipoServicio(tipo)
     setCurrentItem((prev) => ({
       ...prev,
       tipoServicioId: tipo.id,
       tipoServicioNombre: tipo.nombre,
     }))
-    setSearchTerm(tipo.nombre)
+    setSearchTerm("")
     setFilteredTipos([])
     setShowTiposList(false)
+  }
+
+  const handleClearTipoServicio = () => {
+    setSelectedTipoServicio(null)
+    setCurrentItem((prev) => ({
+      ...prev,
+      tipoServicioId: null,
+      tipoServicioNombre: "",
+    }))
+    setSearchTerm("")
   }
 
   const handleAddProducto = () => {
@@ -112,6 +159,7 @@ const AgregarServicioModal = ({ isOpen, onClose, onAddItem, tiposServicios = [] 
     setSearchTerm("")
     setNewProducto("")
     setShowTiposList(false)
+    setSelectedTipoServicio(null)
     onClose()
   }
 
@@ -122,230 +170,392 @@ const AgregarServicioModal = ({ isOpen, onClose, onAddItem, tiposServicios = [] 
     }
   }
 
-  if (!isOpen) return null
-
-  // small inline styles to force GPU/compositing and avoid flicker on scroll
-  const gpuStyle = {
-    transform: "translateZ(0)",
-    backfaceVisibility: "hidden",
-    WebkitBackfaceVisibility: "hidden",
-    willChange: "transform, opacity",
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+    <Dialog
+      open={isOpen}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          bgcolor: "#d84315",
+          color: "white",
+          p: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 40, height: 40 }}>
+            <AddIcon sx={{ color: "white" }} />
+          </Avatar>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Agregar Nuevo Servicio
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Completa la información del servicio que realizarás
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={handleClose} sx={{ color: "white", "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[700px] mx-4 flex flex-col overscroll-contain">
-        {/* Header */}
-        <div className="flex-shrink-0 bg-[#d84315] text-white p-3 rounded-t-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <h2 className="text-xl ml-4 font-bold">Agregar Nuevo Servicio</h2>
-              </div>
-            </div>
-            {/* Reemplaza el botón de cerrar por este bloque (sin fondo, moderno y accesible) */}
-            <button
-              onClick={handleClose}
-              aria-label="Cerrar modal"
-              className="relative z-10 flex items-center justify-center h-10 w-10 rounded-full text-white bg-transparent hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-0 transition-transform duration-200 motion-safe:transform-gpu hover:scale-110 active:scale-95"
-            >
-              {/* texto solo para lectores de pantalla */}
-              <span className="sr-only">Cerrar</span>
+      <DialogContent
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          p: 3,
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <Card sx={{ border: "1px solid #e0e0e0" }}>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <Avatar sx={{ bgcolor: "#d84315", width: 32, height: 32 }}>
+                  <BuildIcon sx={{ fontSize: 18 }} />
+                </Avatar>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#171717" }}>
+                  Tipo de Servicio *
+                </Typography>
+              </Box>
 
-              {/* icono blanco con micro-animación, sin fondo */}
-              <X className="h-5 w-5 transform transition-transform duration-300 group-hover:-rotate-90" />
-            </button>
-
-          </div>
-        </div>
-
-        {/* Content */}
-        {/* NOTE: removed 'scroll-smooth' (can cause jank) and added -webkit-overflow-scrolling for iOS */}
-        <div
-          className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          {/* Tipo de Servicio Section with Search */}
-          <div className="space-y-3 relative">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-[#d84315]" style={gpuStyle} />
-              <label className="text-sm font-semibold text-[#171717]">Tipo de Servicio *</label>
-            </div>
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
-                style={gpuStyle}
-              />
-              <input
-                type="text"
-                placeholder="Buscar tipo de servicio..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-12 pl-10 pr-4 border-2 border-gray-200 rounded-lg focus:border-[#d84315] focus:outline-none transition-colors box-border"
-              />
-              {showTiposList && filteredTipos.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto overscroll-contain">
-                  {filteredTipos.map((tipo) => (
-                    <div
-                      key={tipo.id}
-                      className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                      onClick={() => handleSelectTipoServicio(tipo)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-[#d84315]"></div>
-                        <span className="font-medium">{tipo.nombre}</span>
-                      </div>
-                      {tipo.descripcion && <p className="text-sm text-gray-500 mt-1 ml-4">{tipo.descripcion}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Productos Section */}
-          {currentItem.tipoServicioId && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-[#d84315]" style={gpuStyle} />
-                <label className="text-sm font-semibold text-[#171717]">Productos Utilizados</label>
-              </div>
-
-              {/* Add Product Input */}
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Ej: Aceite Motul 5W30, Filtro de aceite..."
-                  value={newProducto}
-                  onChange={(e) => setNewProducto(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-[#d84315] focus:outline-none transition-colors box-border"
+              {!selectedTipoServicio ? (
+                <TextField
+                  ref={searchFieldRef}
+                  fullWidth
+                  placeholder="Buscar tipo de servicio..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />,
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&:hover fieldset": { borderColor: "#d84315" },
+                      "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                    },
+                  }}
                 />
-                <button
-                  type="button"
-                  onClick={handleAddProducto}
-                  disabled={!newProducto.trim()}
-                  className="bg-[#d84315] hover:bg-[#d84315]/90 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors flex-shrink-0"
+              ) : (
+                <Paper
+                  sx={{
+                    p: 2,
+                    bgcolor: "#f8f9fa",
+                    border: "2px solid #d84315",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
                 >
-                  <Plus className="h-4 w-4" style={gpuStyle} />
-                </button>
-              </div>
+                  <BuildIcon sx={{ color: "#d84315", fontSize: 20 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" sx={{ fontWeight: "bold", color: "#171717" }}>
+                      {selectedTipoServicio.nombre}
+                    </Typography>
+                    {selectedTipoServicio.descripcion && (
+                      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                        {selectedTipoServicio.descripcion}
+                      </Typography>
+                    )}
+                  </Box>
+                  <IconButton
+                    onClick={handleClearTipoServicio}
+                    size="small"
+                    sx={{
+                      color: "#d84315",
+                      "&:hover": { bgcolor: "rgba(216, 67, 21, 0.1)" },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Paper>
+              )}
+            </CardContent>
+          </Card>
 
-              {/* Products List */}
-              {currentItem.productos.length > 0 && (
-                <div className="space-y-3">
-                  {currentItem.productos.map((producto) => (
-                    <div
-                      key={producto.id}
-                      className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border"
-                      style={{ ...gpuStyle }}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0 overflow-hidden">
-                        <Package className="h-4 w-4 text-gray-500 flex-shrink-0" style={gpuStyle} />
-                        <span className="text-sm font-medium truncate">{producto.nombre}</span>
-                      </div>
+          {currentItem.tipoServicioId && (
+            <Card sx={{ border: "1px solid #e0e0e0" }}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Avatar sx={{ bgcolor: "#d84315", width: 32, height: 32 }}>
+                    <InventoryIcon sx={{ fontSize: 18 }} />
+                  </Avatar>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#171717" }}>
+                    Productos Utilizados
+                  </Typography>
+                </Box>
 
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-600 whitespace-nowrap">
-                            {producto.es_nuestro ? "Nuestro" : "Del cliente"}
-                          </label>
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                  <TextField
+                    fullWidth
+                    placeholder="Ej: Aceite Motul 5W30, Filtro de aceite..."
+                    value={newProducto}
+                    onChange={(e) => setNewProducto(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": { borderColor: "#d84315" },
+                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                      },
+                    }}
+                  />
+                  <Button
+                    onClick={handleAddProducto}
+                    disabled={!newProducto.trim()}
+                    variant="contained"
+                    sx={{
+                      bgcolor: "#d84315",
+                      "&:hover": { bgcolor: "#bf360c" },
+                      minWidth: "auto",
+                      px: 2,
+                    }}
+                  >
+                    <AddIcon />
+                  </Button>
+                </Box>
 
-                          {/* Improved toggle: absolute transform values + will-change to avoid jitter */}
-                          <button
-                            onClick={() => handleToggleProductoOrigen(producto.id)}
-                            aria-pressed={producto.es_nuestro}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${producto.es_nuestro ? "bg-[#d84315]" : "bg-gray-300"
-                              }`}
-                            style={{ padding: 2, ...{ willChange: "transform, background-color" } }}
-                          >
-                            {/* track knob positioned via transform pixel values to be stable across scroll */}
-                            <span
-                              className="absolute left-0 top-0 h-5 w-5 rounded-full bg-white shadow-sm"
-                              style={{
-                                transform: producto.es_nuestro ? "translateX(20px)" : "translateX(2px)",
-                                transition: "transform 150ms cubic-bezier(.4,0,.2,1)",
-                                willChange: "transform",
-                                backfaceVisibility: "hidden",
-                                WebkitBackfaceVisibility: "hidden",
+                {currentItem.productos.length > 0 && (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {currentItem.productos.map((producto) => (
+                      <Paper
+                        key={producto.id}
+                        sx={{
+                          p: 2,
+                          bgcolor: "#f5f5f5",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        <InventoryIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                        <Typography variant="body2" sx={{ flex: 1, fontWeight: "medium" }}>
+                          {producto.nombre}
+                        </Typography>
+
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={producto.es_nuestro}
+                              onChange={() => handleToggleProductoOrigen(producto.id)}
+                              sx={{
+                                "& .MuiSwitch-switchBase.Mui-checked": { color: "#d84315" },
+                                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#d84315" },
                               }}
                             />
-                          </button>
-                        </div>
+                          }
+                          label={
+                            <Typography variant="caption">{producto.es_nuestro ? "Nuestro" : "Del cliente"}</Typography>
+                          }
+                          sx={{ mr: 1 }}
+                        />
 
-                        <button
-                          type="button"
+                        <IconButton
                           onClick={() => handleRemoveProducto(producto.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                          size="small"
+                          sx={{ color: "error.main", "&:hover": { bgcolor: "error.light", color: "white" } }}
                         >
-                          <X className="h-4 w-4" style={gpuStyle} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
           )}
 
-          {/* Detalles Adicionales */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-[#171717] flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                Observaciones
-              </label>
-              <textarea
-                placeholder="Observaciones específicas del cliente o del vehículo..."
-                value={currentItem.observaciones}
-                onChange={(e) => setCurrentItem((prev) => ({ ...prev, observaciones: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-[#d84315] focus:outline-none transition-colors resize-none box-border"
-                rows={3}
-              />
-            </div>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card sx={{ border: "1px solid #e0e0e0", height: "100%" }}>
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#2196f3" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#171717" }}>
+                      Observaciones
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="Observaciones específicas del cliente o del vehículo..."
+                    value={currentItem.observaciones}
+                    onChange={(e) => setCurrentItem((prev) => ({ ...prev, observaciones: e.target.value }))}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": { borderColor: "#d84315" },
+                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                      },
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
 
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-[#171717] flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                Notas Internas
-              </label>
-              <textarea
-                placeholder="Notas para el equipo técnico, recordatorios..."
-                value={currentItem.notas}
-                onChange={(e) => setCurrentItem((prev) => ({ ...prev, notas: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-[#d84315] focus:outline-none transition-colors resize-none box-border"
-                rows={3}
-              />
-            </div>
-          </div>
+            <Grid item xs={12} md={6}>
+              <Card sx={{ border: "1px solid #e0e0e0", height: "100%" }}>
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#4caf50" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#171717" }}>
+                      Notas Internas
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="Notas para el equipo técnico, recordatorios..."
+                    value={currentItem.notas}
+                    onChange={(e) => setCurrentItem((prev) => ({ ...prev, notas: e.target.value }))}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": { borderColor: "#d84315" },
+                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                      },
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
 
-          {/* Preview Card */}
-          
-        </div>
+          {currentItem.tipoServicioId && (
+            <Card
+              sx={{
+                background: "linear-gradient(135deg, rgba(216, 67, 21, 0.05) 0%, rgba(216, 67, 21, 0.1) 100%)",
+                border: "1px solid rgba(216, 67, 21, 0.2)",
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <CheckCircleIcon sx={{ color: "#d84315", fontSize: 18 }} />
+                  <Typography variant="subtitle2" sx={{ color: "#d84315", fontWeight: "bold" }}>
+                    Vista Previa del Servicio
+                  </Typography>
+                </Box>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 flex justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            onClick={handleClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {currentItem.tipoServicioNombre && (
+                    <Typography variant="body2">
+                      <strong>Tipo:</strong> {currentItem.tipoServicioNombre}
+                    </Typography>
+                  )}
+                  {currentItem.productos.length > 0 && (
+                    <Typography variant="body2">
+                      <strong>Productos:</strong> {currentItem.productos.length} item(s)
+                    </Typography>
+                  )}
+
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
+                    {currentItem.observaciones && (
+                      <Chip
+                        label={`Obs: ${currentItem.observaciones.substring(0, 30)}...`}
+                        size="small"
+                        sx={{ bgcolor: "#f5f5f5" }}
+                      />
+                    )}
+                    {currentItem.notas && (
+                      <Chip label={`Notas: ${currentItem.notas.substring(0, 30)}...`} size="small" variant="outlined" />
+                    )}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+      </DialogContent>
+
+      {showTiposList && filteredTipos.length > 0 && !selectedTipoServicio && (
+        <Portal>
+          <Paper
+            sx={{
+              position: "fixed",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              zIndex: 1500,
+              maxHeight: 200,
+              overflow: "auto",
+              border: "1px solid #e0e0e0",
+              boxShadow: "0 8px 16px -4px rgba(0, 0, 0, 0.2), 0 4px 8px -2px rgba(0, 0, 0, 0.1)",
+            }}
           >
-            Cancelar
-          </button>
-          <button
-            onClick={handleAddItem}
-            disabled={!currentItem.tipoServicioId}
-            className="bg-[#d84315] hover:bg-[#d84315]/90 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg shadow-lg transition-colors flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" style={gpuStyle} />
-            Agregar Servicio
-          </button>
-        </div>
-      </div>
-    </div>
+            <List disablePadding>
+              {filteredTipos.map((tipo, index) => (
+                <ListItem key={tipo.id} disablePadding>
+                  <ListItemButton
+                    onClick={() => handleSelectTipoServicio(tipo)}
+                    sx={{
+                      borderBottom: index < filteredTipos.length - 1 ? "1px solid #f0f0f0" : "none",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          bgcolor: "#d84315",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <ListItemText
+                        primary={tipo.nombre}
+                        secondary={tipo.descripcion}
+                        primaryTypographyProps={{ fontWeight: "medium" }}
+                      />
+                    </Box>
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </Portal>
+      )}
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 2,
+          p: 3,
+          borderTop: "1px solid #e0e0e0",
+          flexShrink: 0,
+        }}
+      >
+        <Button onClick={handleClose} variant="outlined" sx={{ color: "#666", borderColor: "#ddd" }}>
+          Cancelar
+        </Button>
+        <Button
+          onClick={handleAddItem}
+          disabled={!currentItem.tipoServicioId}
+          variant="contained"
+          startIcon={<AddIcon />}
+          sx={{
+            bgcolor: "#d84315",
+            "&:hover": { bgcolor: "#bf360c" },
+            "&:disabled": { bgcolor: "#ccc" },
+          }}
+        >
+          Agregar Servicio
+        </Button>
+      </Box>
+    </Dialog>
   )
 }
 

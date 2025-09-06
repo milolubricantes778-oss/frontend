@@ -2,12 +2,21 @@
 
 import { useState } from "react"
 import { useAuth } from "../../contexts/AuthContext"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
-import { Button } from "../ui/button"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
-import ErrorMessage from "../Common/ErrorMessage"
-import { Eye, EyeOff } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  IconButton,
+  InputAdornment,
+  Alert,
+  CircularProgress,
+  Avatar,
+  Divider,
+} from "@mui/material"
+import { Visibility, VisibilityOff, Lock, CheckCircle, Close } from "@mui/icons-material"
 
 const ChangePasswordModal = ({ open, onClose }) => {
   const { changePassword } = useAuth()
@@ -65,91 +74,240 @@ const ChangePasswordModal = ({ open, onClose }) => {
     }))
   }
 
+  const handleClose = () => {
+    onClose()
+    setError("")
+    setSuccess(false)
+    setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Cambiar Contraseña</DialogTitle>
-        </DialogHeader>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          overflow: "hidden",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          background: "linear-gradient(135deg, #d84315 0%, #ff6f47 100%)",
+          color: "white",
+          p: 3,
+          position: "relative",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Avatar
+              sx={{
+                background: "rgba(255, 255, 255, 0.2)",
+                mr: 2,
+                width: 48,
+                height: 48,
+              }}
+            >
+              <Lock sx={{ color: "white" }} />
+            </Avatar>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                Cambiar Contraseña
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Actualiza tu contraseña de acceso
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              color: "white",
+              "&:hover": {
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
+            }}
+          >
+            <Close />
+          </IconButton>
+        </Box>
+      </Box>
 
+      <DialogContent sx={{ p: 3 }}>
         {success ? (
-          <div className="text-center py-6">
-            <div className="text-green-600 text-lg font-semibold mb-2">¡Contraseña cambiada exitosamente!</div>
-            <p className="text-gray-600">La ventana se cerrará automáticamente...</p>
-          </div>
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <Avatar
+              sx={{
+                background: "linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)",
+                width: 64,
+                height: 64,
+                mx: "auto",
+                mb: 2,
+              }}
+            >
+              <CheckCircle sx={{ fontSize: 32 }} />
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1, color: "#4caf50" }}>
+              ¡Contraseña cambiada exitosamente!
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              La ventana se cerrará automáticamente...
+            </Typography>
+          </Box>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <ErrorMessage message={error} onClose={() => setError("")} />
+          <Box component="form" onSubmit={handleSubmit}>
+            {error && (
+              <Alert severity="error" onClose={() => setError("")} sx={{ mb: 3, borderRadius: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Contraseña Actual</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showPasswords.current ? "text" : "password"}
-                  value={formData.currentPassword}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  onClick={() => togglePasswordVisibility("current")}
-                >
-                  {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Contraseña Actual"
+                type={showPasswords.current ? "text" : "password"}
+                value={formData.currentPassword}
+                onChange={(e) => setFormData((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => togglePasswordVisibility("current")} edge="end">
+                        {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#d84315",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#d84315",
+                  },
+                }}
+              />
+            </Box>
 
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nueva Contraseña</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showPasswords.new ? "text" : "password"}
-                  value={formData.newPassword}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, newPassword: e.target.value }))}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  onClick={() => togglePasswordVisibility("new")}
-                >
-                  {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Nueva Contraseña"
+                type={showPasswords.new ? "text" : "password"}
+                value={formData.newPassword}
+                onChange={(e) => setFormData((prev) => ({ ...prev, newPassword: e.target.value }))}
+                required
+                helperText="Mínimo 6 caracteres"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => togglePasswordVisibility("new")} edge="end">
+                        {showPasswords.new ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#d84315",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#d84315",
+                  },
+                }}
+              />
+            </Box>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showPasswords.confirm ? "text" : "password"}
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  onClick={() => togglePasswordVisibility("confirm")}
-                >
-                  {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Confirmar Nueva Contraseña"
+                type={showPasswords.confirm ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => togglePasswordVisibility("confirm")} edge="end">
+                        {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#d84315",
+                    },
+                  },
+                  "& .MuiInputLabel-root.Mui-focused": {
+                    color: "#d84315",
+                  },
+                }}
+              />
+            </Box>
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+            <Divider sx={{ my: 3 }} />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={handleClose}
+                disabled={loading}
+                sx={{
+                  borderColor: "#171717",
+                  color: "#171717",
+                  "&:hover": {
+                    borderColor: "#171717",
+                    backgroundColor: "rgba(23, 23, 23, 0.04)",
+                  },
+                }}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Lock />}
+                sx={{
+                  backgroundColor: "#d84315",
+                  "&:hover": {
+                    backgroundColor: "rgba(216, 67, 21, 0.9)",
+                  },
+                  borderRadius: 2,
+                  minWidth: 160,
+                }}
+              >
                 {loading ? "Cambiando..." : "Cambiar Contraseña"}
               </Button>
-            </div>
-          </form>
+            </Box>
+          </Box>
         )}
       </DialogContent>
     </Dialog>

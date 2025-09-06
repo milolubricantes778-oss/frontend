@@ -20,6 +20,8 @@ import {
   Phone as PhoneIcon,
   LocationOn as LocationIcon,
   Badge as BadgeIcon,
+  CheckCircle as ActiveIcon,
+  Cancel as InactiveIcon,
 } from "@mui/icons-material"
 
 const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onDelete, onViewMore }) => {
@@ -52,16 +54,16 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
 
   return (
     <>
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 2 }}>
+      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Cliente ({pagination.total || 0})</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>DNI</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Teléfono</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Dirección</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Registro</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "#171717" }} align="center">
+            <TableRow sx={{ bgcolor: "#d84315" }}>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Cliente ({pagination.total || 0})</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>DNI</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Teléfono</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Dirección</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Registro</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }} align="center">
                 Acciones
               </TableCell>
             </TableRow>
@@ -71,18 +73,15 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
               <TableRow
                 key={cliente.id}
                 sx={{
-                  "&:hover": { bgcolor: "rgba(204, 122, 63, 0.04)" },
+                  "&:hover": { bgcolor: "rgba(216, 67, 21, 0.08)" },
                   opacity: cliente.activo ? 1 : 0.6,
                 }}
               >
                 <TableCell>
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold" style={{ color: "#171717" }}>
                       {cliente.nombre} {cliente.apellido}
                     </div>
-                    {!cliente.activo && (
-                      <Chip label="Inactivo" size="small" color="error" variant="outlined" sx={{ mt: 0.5 }} />
-                    )}
                   </div>
                 </TableCell>
 
@@ -90,8 +89,10 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                   <div className="flex items-center gap-1">
                     {cliente.dni ? (
                       <>
-                        <BadgeIcon sx={{ fontSize: 16, color: "#666" }} />
-                        <span className="font-mono text-sm">{cliente.dni}</span>
+                        <BadgeIcon sx={{ fontSize: 16, color: "#171717" }} />
+                        <span className="font-mono text-sm" style={{ color: "#171717" }}>
+                          {cliente.dni}
+                        </span>
                       </>
                     ) : (
                       <span className="text-gray-400 text-sm">Sin DNI</span>
@@ -103,8 +104,10 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                   <div className="flex items-center gap-1">
                     {cliente.telefono ? (
                       <>
-                        <PhoneIcon sx={{ fontSize: 16, color: "#666" }} />
-                        <span className="text-sm">{cliente.telefono} </span>
+                        <PhoneIcon sx={{ fontSize: 16, color: "#171717" }} />
+                        <span className="text-sm" style={{ color: "#171717" }}>
+                          {cliente.telefono}{" "}
+                        </span>
                       </>
                     ) : (
                       <span className="text-gray-400 text-sm">Sin teléfono</span>
@@ -116,8 +119,10 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                   <div className="flex items-start gap-1">
                     {cliente.direccion ? (
                       <>
-                        <LocationIcon sx={{ fontSize: 16, color: "#666", mt: 0.2 }} />
-                        <span className="text-sm">{cliente.direccion}</span>
+                        <LocationIcon sx={{ fontSize: 16, color: "#171717", mt: 0.2 }} />
+                        <span className="text-sm" style={{ color: "#171717" }}>
+                          {cliente.direccion}
+                        </span>
                       </>
                     ) : (
                       <span className="text-gray-400 text-sm">Sin dirección</span>
@@ -126,7 +131,9 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                 </TableCell>
 
                 <TableCell>
-                  <span className="text-sm text-gray-600">{formatDate(cliente.created_at)}</span>
+                  <span className="text-sm" style={{ color: "#171717" }}>
+                    {formatDate(cliente.created_at)}
+                  </span>
                 </TableCell>
 
                 <TableCell align="center">
@@ -136,8 +143,8 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                         onClick={() => onViewMore(cliente)}
                         size="small"
                         sx={{
-                          color: "#2196F3",
-                          "&:hover": { bgcolor: "rgba(33, 150, 243, 0.1)" },
+                          color: "#171717",
+                          "&:hover": { bgcolor: "rgba(23, 23, 23, 0.1)" },
                         }}
                       >
                         <VisibilityIcon fontSize="small" />
@@ -149,8 +156,8 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                         onClick={() => onEdit(cliente)}
                         size="small"
                         sx={{
-                          color: "#CC7A3F",
-                          "&:hover": { bgcolor: "rgba(204, 122, 63, 0.1)" },
+                          color: "#d84315",
+                          "&:hover": { bgcolor: "rgba(216, 67, 21, 0.1)" },
                         }}
                       >
                         <EditIcon fontSize="small" />
@@ -177,7 +184,6 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
         </Table>
       </TableContainer>
 
-      {/* Paginación */}
       <TablePagination
         component="div"
         count={pagination.total}
@@ -192,6 +198,16 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
           borderTop: "1px solid #e0e0e0",
           ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
             fontSize: "0.875rem",
+            color: "#171717",
+          },
+          ".MuiTablePagination-select": {
+            color: "#171717",
+          },
+          ".MuiIconButton-root": {
+            color: "#171717",
+            "&:hover": {
+              bgcolor: "rgba(216, 67, 21, 0.1)",
+            },
           },
         }}
       />

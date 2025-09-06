@@ -17,20 +17,19 @@ export const useVehiculos = () => {
   })
   const [currentFilters, setCurrentFilters] = useState({
     search: "",
-    clienteId: "",
+    searchCriteria: "patente",
   })
 
   const { showToast } = useToast()
   const errorHandler = useStandardizedErrorHandler(showToast)
 
-  // Cargar vehículos
   const loadVehiculos = useCallback(
-    async (page = 1, limit = 10, search = "", clienteId = "") => {
+    async (page = 1, limit = 10, search = "", searchCriteria = "patente") => {
       setLoading(true)
       setError(null)
-      setCurrentFilters({ search, clienteId })
+      setCurrentFilters({ search, searchCriteria })
       try {
-        const response = await vehiculosService.getAll(page, limit, search, clienteId)
+        const response = await vehiculosService.getAll(page, limit, search, searchCriteria)
 
         if (!response) {
           setVehiculos([])
@@ -57,7 +56,39 @@ export const useVehiculos = () => {
     [errorHandler],
   )
 
-  // Crear vehículo
+  const loadVehiculosByCliente = useCallback(
+    async (clienteId) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await vehiculosService.getByCliente(clienteId)
+
+        if (!response) {
+          setVehiculos([])
+          return
+        }
+
+        const vehiculosData = response.data || response || []
+        setVehiculos(vehiculosData)
+
+        // Reset pagination for client-specific view
+        setPagination({
+          total: vehiculosData.length,
+          totalPages: 1,
+          currentPage: 1,
+          limit: vehiculosData.length,
+        })
+      } catch (err) {
+        const { userMessage } = errorHandler.handleApiError(err, "cargar vehículos del cliente")
+        setError(userMessage)
+        setVehiculos([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [errorHandler],
+  )
+
   const createVehiculo = useCallback(
     async (vehiculoData) => {
       setLoading(true)
@@ -67,7 +98,12 @@ export const useVehiculos = () => {
 
         errorHandler.handleSuccess("Vehículo creado exitosamente", "crear vehículo")
 
-        await loadVehiculos(pagination.currentPage, pagination.limit, currentFilters.search, currentFilters.clienteId)
+        await loadVehiculos(
+          pagination.currentPage,
+          pagination.limit,
+          currentFilters.search,
+          currentFilters.searchCriteria,
+        )
 
         return { success: true, data: newVehiculo }
       } catch (err) {
@@ -81,7 +117,6 @@ export const useVehiculos = () => {
     [loadVehiculos, pagination.currentPage, pagination.limit, currentFilters, errorHandler],
   )
 
-  // Actualizar vehículo
   const updateVehiculo = useCallback(
     async (id, vehiculoData) => {
       setLoading(true)
@@ -104,7 +139,6 @@ export const useVehiculos = () => {
     [errorHandler],
   )
 
-  // Eliminar vehículo
   const deleteVehiculo = useCallback(
     async (id) => {
       setLoading(true)
@@ -127,29 +161,26 @@ export const useVehiculos = () => {
     [errorHandler],
   )
 
-  // Cambiar página
   const changePage = useCallback(
     (newPage) => {
-      loadVehiculos(newPage, pagination.limit, currentFilters.search, currentFilters.clienteId)
+      loadVehiculos(newPage, pagination.limit, currentFilters.search, currentFilters.searchCriteria)
     },
     [loadVehiculos, pagination.limit, currentFilters],
   )
 
-  // Cambiar filas por página
   const changeRowsPerPage = useCallback(
     (newLimit) => {
-      loadVehiculos(1, newLimit, currentFilters.search, currentFilters.clienteId)
+      loadVehiculos(1, newLimit, currentFilters.search, currentFilters.searchCriteria)
     },
     [loadVehiculos, currentFilters],
   )
 
-  // Fetch vehículos for dashboard compatibility
   const fetchVehiculos = useCallback(
     async (params = {}) => {
-      const { search = "", limit = 10, page = 1, clienteId = "" } = params
+      const { search = "", limit = 10, page = 1, searchCriteria = "patente" } = params
 
       try {
-        const result = await vehiculosService.getAll(page, limit, search, clienteId)
+        const result = await vehiculosService.getAll(page, limit, search, searchCriteria)
         return result
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "buscar vehículos")
@@ -165,6 +196,7 @@ export const useVehiculos = () => {
     error,
     pagination,
     loadVehiculos,
+    loadVehiculosByCliente, // Exportando nueva función
     fetchVehiculos,
     createVehiculo,
     updateVehiculo,
@@ -174,7 +206,6 @@ export const useVehiculos = () => {
   }
 }
 
-// Hook para estadísticas de vehículos
 export const useVehiculoStats = () => {
   const [stats, setStats] = useState({
     total: 0,

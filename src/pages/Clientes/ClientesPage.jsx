@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -37,7 +37,8 @@ const ClientesPage = () => {
     createCliente,
     updateCliente,
     deleteCliente,
-    searchClientes,
+    changePage,
+    changeRowsPerPage,
   } = useClientes()
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -50,18 +51,18 @@ const ClientesPage = () => {
   const [detalleModalOpen, setDetalleModalOpen] = useState(false)
   const [clienteDetalle, setClienteDetalle] = useState(null)
 
+  useEffect(() => {
+    loadClientes()
+  }, [])
+
   const handleSearch = () => {
-    if (searchTerm.trim()) {
-      searchClientes(searchTerm, searchCriteria)
-    } else {
-      loadClientes(1)
-    }
+    loadClientes(1, pagination.limit, searchTerm, searchCriteria)
   }
 
   const handleClearFilters = () => {
     setSearchTerm("")
     setSearchCriteria("nombre")
-    loadClientes(1)
+    loadClientes(1, pagination.limit, "", "")
   }
 
   const handleNewCliente = () => {
@@ -81,16 +82,24 @@ const ClientesPage = () => {
 
   const confirmDelete = async () => {
     try {
-      await deleteCliente(clienteToDelete.id)
-      setSnackbar({
-        open: true,
-        message: "Cliente eliminado correctamente",
-        severity: "success",
-      })
+      const result = await deleteCliente(clienteToDelete.id)
+      if (result.success) {
+        setSnackbar({
+          open: true,
+          message: "Cliente eliminado correctamente",
+          severity: "success",
+        })
+      } else {
+        setSnackbar({
+          open: true,
+          message: result.error || "Error al eliminar cliente",
+          severity: "error",
+        })
+      }
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Error al eliminar cliente: " + error.message,
+        message: "Error al eliminar cliente",
         severity: "error",
       })
     } finally {
@@ -101,36 +110,36 @@ const ClientesPage = () => {
 
   const handleFormSubmit = async (data) => {
     try {
+      let result
       if (selectedCliente) {
-        await updateCliente(selectedCliente.id, data)
+        result = await updateCliente(selectedCliente.id, data)
+      } else {
+        result = await createCliente(data)
+      }
+
+      if (result.success) {
         setSnackbar({
           open: true,
-          message: "Cliente actualizado correctamente",
+          message: selectedCliente ? "Cliente actualizado correctamente" : "Cliente creado correctamente",
           severity: "success",
         })
+        setFormOpen(false)
+        setTimeout(() => {
+          loadClientes(pagination.currentPage, pagination.limit, searchTerm, searchCriteria)
+        }, 500)
       } else {
-        await createCliente(data)
         setSnackbar({
           open: true,
-          message: "Cliente creado correctamente",
-          severity: "success",
+          message: result.error || "Error al guardar cliente",
+          severity: "error",
         })
       }
-      setFormOpen(false)
     } catch (error) {
       setSnackbar({
         open: true,
-        message: "Error al guardar cliente: " + error.message,
+        message: "Error al guardar cliente",
         severity: "error",
       })
-    }
-  }
-
-  const handlePageChange = (page, newLimit = null) => {
-    if (newLimit) {
-      loadClientes(1, searchTerm, newLimit)
-    } else {
-      loadClientes(page, searchTerm)
     }
   }
 
@@ -173,6 +182,21 @@ const ClientesPage = () => {
           </Typography>
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} sm={6} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>Buscar por</InputLabel>
+                <Select
+                  value={searchCriteria}
+                  label="Buscar por"
+                  onChange={(e) => setSearchCriteria(e.target.value)}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="nombre">Nombre Completo</MenuItem>
+                  <MenuItem value="dni">DNI</MenuItem>
+                  <MenuItem value="telefono">Teléfono</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 label="Buscar cliente"
@@ -192,22 +216,6 @@ const ClientesPage = () => {
                   },
                 }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Buscar por</InputLabel>
-                <Select
-                  value={searchCriteria}
-                  label="Buscar por"
-                  onChange={(e) => setSearchCriteria(e.target.value)}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="nombre">Nombre</MenuItem>
-                  <MenuItem value="apellido">Apellido</MenuItem>
-                  <MenuItem value="dni">DNI</MenuItem>
-                  <MenuItem value="telefono">Teléfono</MenuItem>
-                </Select>
-              </FormControl>
             </Grid>
             <Grid item xs={12} sm={12} md={4}>
               <Box sx={{ display: "flex", gap: 2 }}>
@@ -253,7 +261,8 @@ const ClientesPage = () => {
         clientes={clientes}
         loading={loading}
         pagination={pagination}
-        onPageChange={handlePageChange}
+        onPageChange={changePage}
+        onRowsPerPageChange={changeRowsPerPage}
         onEdit={handleEditCliente}
         onDelete={handleDeleteCliente}
         onViewMore={handleViewMore}

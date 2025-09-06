@@ -60,5 +60,11 @@ export const useToast = () => {
     toast,
     toasts,
     removeToast,
+    showToast: useCallback(
+      (message, variant = "success") => {
+        return addToast({ title: message, variant })
+      },
+      [addToast],
+    ),
   }
 }

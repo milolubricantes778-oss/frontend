@@ -1,25 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "../../contexts/AuthContext"
-import { useClientes } from "../../hooks/useClientes"
-import { useVehiculos } from "../../hooks/useVehiculos"
 import SearchBar from "../../components/Dashboard/SearchBar"
 import SearchResults from "../../components/Dashboard/SearchResults"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Search } from "lucide-react"
+import { Box, Card, CardContent } from "@mui/material"
 import clientesService from "../../services/clientesService"
 import vehiculosService from "../../services/vehiculosService"
 
 const DashboardPage = () => {
-  const { user } = useAuth()
-  const [searchMode, setSearchMode] = useState("cliente") // 'cliente' o 'patente'
+  const [searchMode, setSearchMode] = useState("patente") // 'cliente' o 'patente'
   const [searchTerm, setSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
-
-  const { clientes, loadClientes, fetchClientes } = useClientes()
-  const { vehiculos, loadVehiculos, fetchVehiculos } = useVehiculos()
 
   const handleSearch = async (term) => {
     if (!term.trim()) {
@@ -43,7 +35,6 @@ const DashboardPage = () => {
       } else {
         const vehiculosData = await vehiculosService.getAll(1, 10, term, "")
         const vehiculosArray = vehiculosData?.data || vehiculosData || []
-        console.log("[v0] Vehicle search results:", vehiculosArray)
         results = vehiculosArray
       }
 
@@ -63,21 +54,23 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-8">
+    <Box sx={{ p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1200px", mx: "auto" }}>
+      
+
+        <Card elevation={2} sx={{ mb: 3, borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
             <SearchBar onSearch={handleSearch} searchMode={searchMode} onToggleMode={handleToggleMode} />
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-8">
+        <Card elevation={2} sx={{ borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
             <SearchResults results={searchResults} loading={loading} searchTerm={searchTerm} searchMode={searchMode} />
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 

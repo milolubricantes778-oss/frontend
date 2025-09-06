@@ -1,17 +1,24 @@
 "use client"
-
-import { Car, User, Calendar, DollarSign, FileText, Eye } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { Card, CardContent, Typography, Box, Chip, Button, Paper } from "@mui/material"
+import {
+  DirectionsCar as CarIcon,
+  Person as PersonIcon,
+  Event as EventIcon,
+  AttachMoney as MoneyIcon,
+  Description as DescriptionIcon,
+  Visibility as VisibilityIcon,
+  Phone as PhoneIcon,
+  Speed as SpeedIcon,
+  Info as InfoIcon,
+} from "@mui/icons-material"
 
 const VehiculoCard = ({ vehiculo }) => {
-  const navigate = useNavigate()
-
   const handleVerTodosServicios = () => {
-    navigate(`/reportes?vehiculo=${vehiculo.patente}`)
+    window.location.href = `/reportes?vehiculo=${vehiculo.patente}`
   }
 
   const handleVerDetalleServicio = (servicio) => {
-    navigate(`/reportes?servicio=${servicio.id}&autoOpen=true`)
+    window.location.href = `/reportes?servicio=${servicio.id}&autoOpen=true`
   }
 
   const formatCurrency = (amount) => {
@@ -33,119 +40,291 @@ const VehiculoCard = ({ vehiculo }) => {
   }
 
   return (
-    <div className="w-full border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 bg-white">
-      <div className="p-8">
+    <Card
+      elevation={2}
+      sx={{
+        width: "100%",
+        border: "1px solid",
+        borderColor: "grey.200",
+        borderRadius: 2,
+        "&:hover": {
+          boxShadow: 4,
+          transition: "box-shadow 0.2s ease",
+        },
+        bgcolor: "white",
+      }}
+    >
+      <CardContent sx={{ p: 4 }}>
         {/* Header del Vehículo */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-[#d84315] to-[#bf360c] rounded-full">
-              <Car className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">{vehiculo.patente}</h3>
-              <p className="text-lg text-gray-600">
-                {vehiculo.marca} {vehiculo.modelo} {vehiculo.año}
-              </p>
-              {vehiculo.kilometraje && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mt-1">
-                  {vehiculo.kilometraje.toLocaleString()} km
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="text-right bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-1">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Propietario</span>
-            </div>
-            <p className="font-semibold text-gray-900 text-sm">{vehiculo.cliente_nombre}</p>
-            {vehiculo.cliente_dni && <p className="text-xs text-gray-600">DNI: {vehiculo.cliente_dni}</p>}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {/* Servicios del Vehículo */}
-          <div className="bg-gradient-to-br from-[#d84315]/5 to-[#d84315]/10 border border-[#d84315]/20 rounded-lg">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-[#d84315] rounded-full">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                  <h4 className="text-xl font-bold text-[#d84315]">Historial de Servicios</h4>
-                </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-lg font-medium bg-[#d84315] text-white">
-                  {vehiculo.servicios?.length || 0} servicio{(vehiculo.servicios?.length || 0) !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              {vehiculo.servicios && vehiculo.servicios.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Mostrar hasta 3 servicios más recientes */}
-                  {vehiculo.servicios.slice(0, 3).map((servicio, index) => (
-                    <div key={index} className="bg-white rounded-lg p-4 border border-[#d84315]/20 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[#d84315] text-white">
-                          {servicio.numero}
-                        </span>
-                        <span className="text-xs font-medium text-[#d84315] uppercase tracking-wide">
-                          {index === 0 ? "Más Reciente" : `Servicio ${index + 1}`}
-                        </span>
-                      </div>
-                      <p className="text-gray-800 font-medium mb-3">{servicio.descripcion}</p>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(servicio.created_at)}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-bold text-green-600 text-lg">
-                            {formatCurrency(servicio.precio_referencia)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          onClick={() => handleVerDetalleServicio(servicio)}
-                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-[#d84315] bg-[#d84315]/10 hover:bg-[#d84315]/20 rounded-lg transition-colors duration-200"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver Detalle
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {vehiculo.servicios.length > 3 && (
-                    <div className="text-center py-2">
-                      <p className="text-sm text-[#d84315] font-medium">
-                        + {vehiculo.servicios.length - 3} servicio{vehiculo.servicios.length - 3 !== 1 ? "s" : ""} más
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500 text-lg">No hay servicios registrados para este vehículo</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Botón Ver Todos los Servicios */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleVerTodosServicios}
-              className="bg-[#d84315] hover:bg-[#bf360c] text-white px-8 py-3 text-lg font-semibold rounded-lg transition-colors duration-200"
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 4 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                p: 1.5,
+                background: "linear-gradient(135deg, #d84315 0%, #bf360c 100%)",
+                borderRadius: "50%",
+              }}
             >
-              Ver Historial Completo del Vehículo
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+              <CarIcon sx={{ color: "white", fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: "bold", color: "#171717", mb: 0.5 }}>
+                {vehiculo.patente}
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                {vehiculo.marca} {vehiculo.modelo} {vehiculo.año}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {vehiculo.kilometraje && (
+                  <Chip
+                    icon={<SpeedIcon />}
+                    label={`${vehiculo.kilometraje.toLocaleString()} km`}
+                    size="small"
+                    sx={{
+                      bgcolor: "grey.100",
+                      color: "grey.800",
+                      fontSize: "0.75rem",
+                      fontWeight: "medium",
+                    }}
+                  />
+                )}
+                {vehiculo.observaciones && (
+                  <Chip
+                    icon={<InfoIcon />}
+                    label="Con observaciones"
+                    size="small"
+                    sx={{
+                      color: "warning.dark",
+                      fontSize: "0.75rem",
+                      fontWeight: "medium",
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Box>
+          <Paper
+            elevation={1}
+            sx={{
+              p: 2,
+              bgcolor: "grey.50",
+              borderRadius: 2,
+              textAlign: "right",
+              minWidth: 200,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5, ml: 12 }}>
+              <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textTransform: "uppercase", letterSpacing: 0.5}}
+              >
+                Propietario
+              </Typography>
+            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#171717", mb: 1 }}>
+              {vehiculo.cliente_nombre}
+            </Typography>
+            {vehiculo.cliente_dni && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                DNI: {vehiculo.cliente_dni}
+              </Typography>
+            )}
+            {vehiculo.cliente_telefono && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "flex-end" }}>
+                <PhoneIcon sx={{ fontSize: 12, color: "text.secondary" }} />
+                <Typography variant="caption" color="text.secondary">
+                  {vehiculo.cliente_telefono}
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        </Box>
+
+        {vehiculo.observaciones && (
+          <Paper
+            elevation={1}
+            sx={{
+              p: 2,
+              mb: 3,
+              border: "1px solid",
+              borderColor: "warning.main",
+              borderRadius: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              <InfoIcon sx={{ fontSize: 16, color: "warning.dark" }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "warning.dark" }}>
+                Observaciones del Vehículo
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="warning.dark">
+              {vehiculo.observaciones}
+            </Typography>
+          </Paper>
+        )}
+
+        {/* Servicios del Vehículo */}
+        <Paper
+          elevation={2}
+          sx={{
+            background: "linear-gradient(135deg, rgba(216, 67, 21, 0.05) 0%, rgba(216, 67, 21, 0.1) 100%)",
+            border: "1px solid rgba(216, 67, 21, 0.2)",
+            borderRadius: 2,
+          }}
+        >
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1,
+                    bgcolor: "#d84315",
+                    borderRadius: "50%",
+                  }}
+                >
+                  <DescriptionIcon sx={{ color: "white", fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#d84315" }}>
+                  Historial de Servicios
+                </Typography>
+              </Box>
+              <Chip
+                label={`${vehiculo.servicios?.length || 0} servicio${(vehiculo.servicios?.length || 0) !== 1 ? "s" : ""}`}
+                sx={{
+                  bgcolor: "#d84315",
+                  color: "white",
+                  fontSize: "1rem",
+                  fontWeight: "medium",
+                  px: 2,
+                  py: 0.5,
+                }}
+              />
+            </Box>
+
+            {vehiculo.servicios && vehiculo.servicios.length > 0 ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Mostrar hasta 3 servicios más recientes */}
+                {vehiculo.servicios.slice(0, 3).map((servicio, index) => {
+                  return (
+                    <Paper
+                      key={index}
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        bgcolor: "white",
+                        border: "1px solid rgba(216, 67, 21, 0.2)",
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                        <Chip
+                          label={servicio.numero}
+                          sx={{
+                            bgcolor: "#d84315",
+                            color: "white",
+                            fontWeight: "medium",
+                          }}
+                        />
+                        {index === 0 && (
+                          <Chip
+                            label="Más Reciente"
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              color: "#d84315",
+                              borderColor: "#d84315",
+                              fontSize: "0.75rem",
+                              fontWeight: "medium",
+                              textTransform: "uppercase",
+                              letterSpacing: 0.5,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717", mb: 2 }}>
+                        {servicio.descripcion}
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <EventIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                          <Typography variant="body2" color="text.secondary">
+                            {formatDate(servicio.fecha_creacion)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="h6" sx={{ fontWeight: "bold", color: "success.main" }}>
+                            {formatCurrency(servicio.total)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Button
+                          onClick={() => handleVerDetalleServicio(servicio)}
+                          variant="outlined"
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          sx={{
+                            color: "#d84315",
+                            borderColor: "#d84315",
+                            "&:hover": {
+                              bgcolor: "rgba(216, 67, 21, 0.1)",
+                              borderColor: "#d84315",
+                            },
+                            borderRadius: 2,
+                            textTransform: "none",
+                            fontWeight: "medium",
+                          }}
+                        >
+                          Ver Detalle
+                        </Button>
+                      </Box>
+                    </Paper>
+                  )
+                })}
+
+                {vehiculo.servicios.length > 3 && (
+                  <Box sx={{ textAlign: "center", py: 1 }}>
+                    <Typography variant="body2" sx={{ color: "#d84315", fontWeight: "medium" }}>
+                      + {vehiculo.servicios.length - 3} servicio{vehiculo.servicios.length - 3 !== 1 ? "s" : ""} más
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <DescriptionIcon sx={{ fontSize: 48, color: "grey.400", mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                  No hay servicios registrados para este vehículo
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Paper>
+
+        {/* Botón Ver Todos los Servicios */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Button
+            onClick={handleVerTodosServicios}
+            variant="contained"
+            size="large"
+            sx={{
+              bgcolor: "#d84315",
+              "&:hover": { bgcolor: "#bf360c" },
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: "bold",
+              px: 4,
+              py: 1.5,
+              fontSize: "1.1rem",
+            }}
+          >
+            Ver Historial Completo del Vehículo
+          </Button>
+        </Box>
+      </CardContent>
+    </Card>
   )
 }
 

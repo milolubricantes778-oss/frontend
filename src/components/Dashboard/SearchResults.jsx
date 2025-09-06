@@ -2,64 +2,72 @@
 
 import ClienteCard from "./ClienteCard"
 import VehiculoCard from "./VehiculoCard"
-import { Card, CardContent } from "../ui/card"
+import { Box, Typography, Card, CardContent, Skeleton, Stack } from "@mui/material"
 import { Search } from "lucide-react"
 
 const SearchResults = ({ results, loading, searchTerm, searchMode }) => {
   if (loading) {
     return (
-      <div className="space-y-6">
+      <Stack spacing={3}>
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse w-full">
-            <CardContent className="p-8">
-              <div className="space-y-4">
-                <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="h-24 bg-gray-200 rounded"></div>
-                  <div className="h-24 bg-gray-200 rounded"></div>
-                  <div className="h-24 bg-gray-200 rounded"></div>
-                </div>
-              </div>
+          <Card key={i} elevation={1} sx={{ borderRadius: 2 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Stack spacing={2}>
+                <Skeleton variant="text" width="25%" height={32} />
+                <Skeleton variant="text" width="35%" height={24} />
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 2, mt: 2 }}>
+                  <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 1 }} />
+                  <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 1 }} />
+                  <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 1 }} />
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         ))}
-      </div>
+      </Stack>
     )
   }
 
   if (!searchTerm) {
     return (
-      <div className="text-center py-12">
-        <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Buscar clientes o vehículos</h3>
-        <p className="text-gray-500">Utiliza el buscador para encontrar información de clientes y sus vehículos</p>
-      </div>
+      <Box sx={{ textAlign: "center", py: 8 }}>
+        <Search style={{ fontSize: "3rem", color: "#ccc", marginBottom: "16px" }} />
+        <Typography variant="h6" sx={{ color: "#171717", mb: 1, fontWeight: "medium" }}>
+          Buscar clientes o vehículos
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666" }}>
+          Utiliza el buscador para encontrar información de clientes y sus vehículos
+        </Typography>
+      </Box>
     )
   }
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron resultados</h3>
-        <p className="text-gray-500">
+      <Box sx={{ textAlign: "center", py: 8 }}>
+        <Search style={{ fontSize: "3rem", color: "#ccc", marginBottom: "16px" }} />
+        <Typography variant="h6" sx={{ color: "#171717", mb: 1, fontWeight: "medium" }}>
+          No se encontraron resultados
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666" }}>
           No hay resultados para "{searchTerm}" en {searchMode === "cliente" ? "clientes" : "patentes"}
-        </p>
-      </div>
+        </Typography>
+      </Box>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Resultados de búsqueda</h2>
-        <span className="text-sm text-gray-500">
+    <Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h6" sx={{ color: "#171717", fontWeight: "medium" }}>
+          Resultados de búsqueda
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666" }}>
           {results.length} resultado{results.length !== 1 ? "s" : ""} encontrado{results.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="space-y-6">
+      <Stack spacing={3}>
         {results.map((item) =>
           searchMode === "patente" ? (
             <VehiculoCard key={item.id} vehiculo={item} />
@@ -67,8 +75,8 @@ const SearchResults = ({ results, loading, searchTerm, searchMode }) => {
             <ClienteCard key={item.id} cliente={item} />
           ),
         )}
-      </div>
-    </div>
+      </Stack>
+    </Box>
   )
 }
 

@@ -51,23 +51,24 @@ const ServiciosList = ({ servicios, onEdit, onDelete, onView, loading }) => {
     <TableContainer component={Paper} elevation={0}>
       <Table>
         <TableHead>
-          <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-            <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Número</TableCell>
-            <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Cliente</TableCell>
-            <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Vehículo</TableCell>
-            <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Items</TableCell>
-            <TableCell align="right" sx={{ fontWeight: "bold", color: "#171717" }}>
+          <TableRow sx={{ bgcolor: "#d84315" }}>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Número</TableCell>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Cliente</TableCell>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Vehículo</TableCell>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Sucursal</TableCell>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Items</TableCell>
+            <TableCell align="right" sx={{ fontWeight: "bold", color: "white" }}>
               Total
             </TableCell>
-            <TableCell sx={{ fontWeight: "bold", color: "#171717" }}>Fecha</TableCell>
-            <TableCell align="center" sx={{ fontWeight: "bold", color: "#171717" }}>
+            <TableCell sx={{ fontWeight: "bold", color: "white" }}>Fecha</TableCell>
+            <TableCell align="center" sx={{ fontWeight: "bold", color: "white" }}>
               Acciones
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {servicios.map((servicio) => (
-            <TableRow key={servicio.id} hover sx={{ "&:hover": { bgcolor: "#f9f9f9" } }}>
+            <TableRow key={servicio.id} hover sx={{ "&:hover": { bgcolor: "rgba(216, 67, 21, 0.05)" } }}>
               <TableCell>
                 <Typography variant="body2" fontWeight="bold" sx={{ color: "#d84315" }}>
                   {servicio.numero}
@@ -89,6 +90,11 @@ const ServiciosList = ({ servicios, onEdit, onDelete, onView, loading }) => {
                 </Typography>
                 <Typography variant="caption" color="textSecondary">
                   {servicio.marca} {servicio.modelo} {servicio.año}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography variant="body2" sx={{ color: "#171717" }}>
+                  {servicio.sucursal_nombre || "N/A"}
                 </Typography>
               </TableCell>
               <TableCell>
@@ -140,7 +146,7 @@ const ServiciosList = ({ servicios, onEdit, onDelete, onView, loading }) => {
                   <Tooltip title="Eliminar">
                     <IconButton
                       size="small"
-                      onClick={() => onDelete(servicio.id)}
+                      onClick={() => onDelete(servicio)}
                       sx={{
                         color: "#f44336",
                         "&:hover": { bgcolor: "rgba(244, 67, 54, 0.1)" },

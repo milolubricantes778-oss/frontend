@@ -41,15 +41,17 @@ const VehiculosPage = () => {
   const [formOpen, setFormOpen] = useState(false)
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [clienteFilter, setClienteFilter] = useState("")
+  const [searchCriteria, setSearchCriteria] = useState("patente")
   const [clientes, setClientes] = useState([])
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
 
   // Cargar datos iniciales
   useEffect(() => {
     loadVehiculos()
-    loadClientes()
-  }, []) // Empty dependency array to run only on mount
+    if (searchCriteria === "cliente") {
+      loadClientes()
+    }
+  }, [searchCriteria]) // Empty dependency array to run only on mount
 
   // Cargar clientes para el filtro
   const loadClientes = async () => {
@@ -68,14 +70,14 @@ const VehiculosPage = () => {
 
   // Buscar vehículos
   const handleSearch = () => {
-    loadVehiculos(1, pagination.limit, searchTerm, clienteFilter)
+    loadVehiculos(1, pagination.limit, searchTerm, searchCriteria)
   }
 
   // Limpiar filtros
   const handleClearFilters = () => {
     setSearchTerm("")
-    setClienteFilter("")
-    loadVehiculos(1, pagination.limit, "", "")
+    setSearchCriteria("patente")
+    loadVehiculos(1, pagination.limit, "", "patente")
   }
 
   // Abrir formulario para nuevo vehículo
@@ -116,7 +118,7 @@ const VehiculosPage = () => {
         })
         handleCloseForm()
         setTimeout(() => {
-          loadVehiculos(pagination.currentPage, pagination.limit, searchTerm, clienteFilter)
+          loadVehiculos(pagination.currentPage, pagination.limit, searchTerm, searchCriteria)
         }, 500)
       } else {
         setSnackbar({
@@ -166,6 +168,19 @@ const VehiculosPage = () => {
     setSnackbar({ ...snackbar, open: false })
   }
 
+  const getSearchPlaceholder = () => {
+    switch (searchCriteria) {
+      case "patente":
+        return "Buscar por patente..."
+      case "marca_modelo":
+        return "Buscar por marca o modelo..."
+      case "cliente":
+        return "Buscar por nombre del cliente..."
+      default:
+        return "Buscar..."
+    }
+  }
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -201,10 +216,28 @@ const VehiculosPage = () => {
             Filtros de Búsqueda
           </Typography>
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Buscar por</InputLabel>
+                <Select
+                  value={searchCriteria}
+                  label="Buscar por"
+                  onChange={(e) => {
+                    setSearchCriteria(e.target.value)
+                    setSearchTerm("")
+                  }}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="patente">Patente</MenuItem>
+                  <MenuItem value="marca_modelo">Marca y Modelo</MenuItem>
+                  <MenuItem value="cliente">Cliente</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={5}>
               <TextField
                 fullWidth
-                label="Buscar por patente o marca/modelo"
+                label={getSearchPlaceholder()}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -221,24 +254,6 @@ const VehiculosPage = () => {
                   },
                 }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Filtrar por Cliente</InputLabel>
-                <Select
-                  value={clienteFilter}
-                  label="Filtrar por Cliente"
-                  onChange={(e) => setClienteFilter(e.target.value)}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="">Todos los clientes</MenuItem>
-                  {clientes.map((cliente) => (
-                    <MenuItem key={cliente.id} value={cliente.id}>
-                      {cliente.nombre} {cliente.apellido}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
             <Grid item xs={12} sm={12} md={4}>
               <Box sx={{ display: "flex", gap: 2 }}>

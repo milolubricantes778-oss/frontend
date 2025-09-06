@@ -1,6 +1,15 @@
 "use client"
-
-import { User, Car, Wrench, Phone, ExternalLink, DollarSign, FileText, MessageSquare } from "lucide-react"
+import { Card, CardContent, Typography, Box, Chip, Grid, Button, Divider, Paper } from "@mui/material"
+import {
+  Person as PersonIcon,
+  DirectionsCar as CarIcon,
+  Build as BuildIcon,
+  Phone as PhoneIcon,
+  Launch as LaunchIcon,
+  AttachMoney as MoneyIcon,
+  Description as DescriptionIcon,
+  Chat as ChatIcon,
+} from "@mui/icons-material"
 
 const ClienteCard = ({ cliente }) => {
   const handleViewAllServices = () => {
@@ -14,8 +23,7 @@ const ClienteCard = ({ cliente }) => {
   const vehiculos = cliente.vehiculos || []
   const servicios = cliente.servicios || []
 
-  const sortedServicios = servicios.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  const latestService = sortedServicios.length > 0 ? sortedServicios[0] : null
+  const latestService = servicios.length > 0 ? servicios[0] : null
 
   const getVehicleForService = (servicio) => {
     return vehiculos.find((v) => v.id === servicio.vehiculo_id) || null
@@ -25,209 +33,462 @@ const ClienteCard = ({ cliente }) => {
     return servicio.items_count || servicio.items?.length || 1
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A"
+
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return "N/A"
+      }
+      return date.toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch (error) {
+      return "N/A"
+    }
+  }
+
   return (
-    <div className="w-full max-w-none hover:shadow-xl transition-all duration-300 border-2 border-[#d84315]/20 shadow-lg bg-gradient-to-br from-white to-[#d84315]/5 rounded-lg">
-      <div className="pb-6 bg-gradient-to-r from-[#d84315]/10 to-[#d84315]/5 border-b-2 border-[#d84315]/20 p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-[#d84315] to-[#d84315]/80 rounded-xl shadow-md">
-              <User className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">
+    <Card
+      elevation={3}
+      sx={{
+        width: "100%",
+        border: "2px solid",
+        borderColor: "#d84315",
+        borderRadius: 2,
+        "&:hover": {
+          boxShadow: 6,
+          transform: "translateY(-2px)",
+          transition: "all 0.3s ease",
+        },
+        background: "linear-gradient(135deg, #ffffff 0%, rgba(216, 67, 21, 0.05) 100%)",
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          p: 3,
+          background: "linear-gradient(135deg, rgba(216, 67, 21, 0.1) 0%, rgba(216, 67, 21, 0.05) 100%)",
+          borderBottom: "2px solid",
+          borderBottomColor: "rgba(216, 67, 21, 0.2)",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: "#d84315",
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <PersonIcon sx={{ color: "white", fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#171717", mb: 0.5 }}>
                 {cliente.nombre} {cliente.apellido}
-              </h3>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 {cliente.dni && (
-                  <span className="flex items-center space-x-1">
-                    <User className="h-3 w-3" />
-                    <span>DNI: {cliente.dni}</span>
-                  </span>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <PersonIcon sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography variant="caption" color="text.secondary">
+                      DNI: {cliente.dni}
+                    </Typography>
+                  </Box>
                 )}
                 {cliente.telefono && (
-                  <span className="flex items-center space-x-1">
-                    <Phone className="h-3 w-3" />
-                    <span>{cliente.telefono}</span>
-                  </span>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <PhoneIcon sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography variant="caption" color="text.secondary">
+                      {cliente.telefono}
+                    </Typography>
+                  </Box>
                 )}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-end space-y-2">
-            <span className="bg-white border-[#d84315]/30 text-[#d84315] font-medium px-3 py-1 rounded-full border text-sm">
-              {vehiculos.length} vehículo{vehiculos.length !== 1 ? "s" : ""}
-            </span>
-            <span className="bg-[#d84315]/10 border-[#d84315]/30 text-[#d84315] font-medium px-3 py-1 rounded-full border text-sm">
-              {servicios.length} servicio{servicios.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </div>
-      </div>
+              </Box>
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Chip
+              label={`${vehiculos.length} vehículo${vehiculos.length !== 1 ? "s" : ""}`}
+              size="small"
+              sx={{
+                bgcolor: "white",
+                color: "#d84315",
+                border: "1px solid rgba(216, 67, 21, 0.3)",
+                fontWeight: "medium",
+              }}
+            />
+            <Chip
+              label={`${servicios.length} servicio${servicios.length !== 1 ? "s" : ""}`}
+              size="small"
+              sx={{
+                bgcolor: "rgba(216, 67, 21, 0.1)",
+                color: "#d84315",
+                border: "1px solid rgba(216, 67, 21, 0.3)",
+                fontWeight: "medium",
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
 
-      <div className="p-6">
-        {/* Vehículos Section - Minimalist */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Car className="h-5 w-5 text-[#d84315]" />
-            <h4 className="font-semibold text-gray-900">Vehículos</h4>
-            <span className="bg-[#d84315]/10 text-[#d84315] px-2 py-1 rounded-full text-xs font-medium">
-              {vehiculos.length}
-            </span>
-          </div>
+      <CardContent sx={{ p: 3 }}>
+        {/* Vehículos Section */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <CarIcon sx={{ color: "#d84315", fontSize: 20 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#171717" }}>
+              Vehículos
+            </Typography>
+            <Chip
+              label={vehiculos.length}
+              size="small"
+              sx={{
+                bgcolor: "rgba(216, 67, 21, 0.1)",
+                color: "#d84315",
+                fontSize: "0.75rem",
+                fontWeight: "medium",
+              }}
+            />
+          </Box>
 
           {vehiculos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Grid container spacing={2}>
               {vehiculos.map((vehiculo, index) => (
-                <div
-                  key={vehiculo.id || index}
-                  className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-[#d84315]/30 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-gray-900">{vehiculo.patente}</p>
-                      <p className="text-sm text-gray-600">
-                        {vehiculo.marca} {vehiculo.modelo}
-                      </p>
-                    </div>
-                    {vehiculo.año && (
-                      <span className="bg-white border text-[#d84315] px-2 py-1 rounded text-xs">{vehiculo.año}</span>
-                    )}
-                  </div>
-                </div>
+                <Grid item xs={12} md={6} key={vehiculo.id || index}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2,
+                      bgcolor: "grey.50",
+                      border: "1px solid",
+                      borderColor: "grey.200",
+                      borderRadius: 2,
+                      "&:hover": {
+                        borderColor: "rgba(216, 67, 21, 0.3)",
+                        transition: "border-color 0.2s ease",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#171717" }}>
+                          {vehiculo.patente}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {vehiculo.marca} {vehiculo.modelo}
+                        </Typography>
+                      </Box>
+                      {vehiculo.año && (
+                        <Chip
+                          label={vehiculo.año}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            color: "#d84315",
+                            borderColor: "#d84315",
+                            fontSize: "0.75rem",
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
               ))}
-            </div>
+            </Grid>
           ) : (
-            <div className="text-center py-4 text-gray-500">
-              <p className="text-sm">No hay vehículos registrados</p>
-            </div>
+            <Box sx={{ textAlign: "center", py: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                No hay vehículos registrados
+              </Typography>
+            </Box>
           )}
-        </div>
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
 
         {/* Último Servicio Section */}
-        <div>
-          <div className="flex items-center space-x-2 mb-4">
-            <Wrench className="h-5 w-5 text-[#d84315]" />
-            <h4 className="font-semibold text-gray-900">Último Servicio</h4>
-          </div>
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+            <BuildIcon sx={{ color: "#d84315", fontSize: 20 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "#171717" }}>
+              Último Servicio
+            </Typography>
+          </Box>
 
           {servicios.length > 0 && latestService ? (
-            <div className="space-y-4">
-              <div className="p-5 bg-gradient-to-br from-[#d84315]/10 to-[#d84315]/5 rounded-xl border-2 border-[#d84315]/30 hover:border-[#d84315]/40 transition-colors">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="font-bold text-gray-900 text-lg">{latestService.numero}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(latestService.created_at).toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 3,
+                  background: "linear-gradient(135deg, rgba(216, 67, 21, 0.1) 0%, rgba(216, 67, 21, 0.05) 100%)",
+                  border: "2px solid rgba(216, 67, 21, 0.3)",
+                  borderRadius: 2,
+                  "&:hover": {
+                    borderColor: "rgba(216, 67, 21, 0.4)",
+                    transition: "border-color 0.2s ease",
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#171717" }}>
+                      {latestService.numero}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(latestService.created_at)}
+                    </Typography>
+                  </Box>
+                </Box>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="flex items-center space-x-2 p-3 bg-white/50 rounded-lg border border-[#d84315]/20">
-                    <Wrench className="h-4 w-4 text-[#d84315]" />
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Tipos de Servicio</p>
-                      <p className="font-bold text-[#d84315]">
-                        {getServiceTypesCount(latestService)} tipo
-                        {getServiceTypesCount(latestService) !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </div>
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={4}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        bgcolor: "rgba(255, 255, 255, 0.5)",
+                        border: "1px solid rgba(216, 67, 21, 0.2)",
+                        borderRadius: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <BuildIcon sx={{ color: "#d84315", fontSize: 16 }} />
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+                        >
+                          Servicios realizados
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#d84315" }}>
+                          {getServiceTypesCount(latestService)} tipo
+                          {getServiceTypesCount(latestService) !== 1 ? "s" : ""}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
 
                   {(() => {
                     const vehicle = getVehicleForService(latestService)
                     return vehicle ? (
-                      <div className="flex items-center space-x-2 p-3 bg-white/50 rounded-lg border border-[#d84315]/20">
-                        <Car className="h-4 w-4 text-[#d84315]" />
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Vehículo</p>
-                          <p className="font-bold text-[#d84315]">{vehicle.patente}</p>
-                          <p className="text-xs text-gray-600">
-                            {vehicle.marca} {vehicle.modelo}
-                          </p>
-                        </div>
-                      </div>
+                      <Grid item xs={12} md={4}>
+                        <Paper
+                          sx={{
+                            p: 2,
+                            bgcolor: "rgba(255, 255, 255, 0.5)",
+                            border: "1px solid rgba(216, 67, 21, 0.2)",
+                            borderRadius: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <CarIcon sx={{ color: "#d84315", fontSize: 16 }} />
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+                            >
+                              Vehículo
+                            </Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#d84315" }}>
+                              {vehicle.patente}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {vehicle.marca} {vehicle.modelo}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
                     ) : null
                   })()}
 
                   {latestService.precio_referencia && (
-                    <div className="flex items-center space-x-2 p-3 bg-white/50 rounded-lg border border-[#d84315]/20">
-                      <DollarSign className="h-4 w-4 text-[#d84315]" />
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Precio</p>
-                        <p className="font-bold text-[#d84315]">
-                          ${Number.parseFloat(latestService.precio_referencia).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
+                    <Grid item xs={12} md={4}>
+                      <Paper
+                        sx={{
+                          p: 2,
+                          bgcolor: "rgba(255, 255, 255, 0.5)",
+                          border: "1px solid rgba(216, 67, 21, 0.2)",
+                          borderRadius: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        <MoneyIcon sx={{ color: "#d84315", fontSize: 16 }} />
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
+                          >
+                            Precio
+                          </Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#d84315" }}>
+                            ${Number.parseFloat(latestService.precio_referencia).toLocaleString()}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
                   )}
-                </div>
+                </Grid>
 
                 {(latestService.observaciones || latestService.notas) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <Grid container spacing={2} sx={{ mb: 2 }}>
                     {latestService.observaciones && (
-                      <div className="p-3 bg-white/50 rounded-lg border border-[#d84315]/20">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <FileText className="h-4 w-4 text-[#d84315]" />
-                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Observaciones</p>
-                        </div>
-                        <p className="text-sm text-gray-700 line-clamp-2">{latestService.observaciones}</p>
-                      </div>
+                      <Grid item xs={12} md={6}>
+                        <Paper
+                          sx={{
+                            p: 2,
+                            bgcolor: "rgba(255, 255, 255, 0.5)",
+                            border: "1px solid rgba(216, 67, 21, 0.2)",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                            <DescriptionIcon sx={{ color: "#d84315", fontSize: 16 }} />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "medium" }}
+                            >
+                              Observaciones
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            color="text.primary"
+                            sx={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {latestService.observaciones}
+                          </Typography>
+                        </Paper>
+                      </Grid>
                     )}
 
                     {latestService.notas && (
-                      <div className="p-3 bg-white/50 rounded-lg border border-[#d84315]/20">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <MessageSquare className="h-4 w-4 text-[#d84315]" />
-                          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Notas Internas</p>
-                        </div>
-                        <p className="text-sm text-gray-700 line-clamp-2">{latestService.notas}</p>
-                      </div>
+                      <Grid item xs={12} md={6}>
+                        <Paper
+                          sx={{
+                            p: 2,
+                            bgcolor: "rgba(255, 255, 255, 0.5)",
+                            border: "1px solid rgba(216, 67, 21, 0.2)",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                            <ChatIcon sx={{ color: "#d84315", fontSize: 16 }} />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "medium" }}
+                            >
+                              Notas Internas
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            color="text.primary"
+                            sx={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {latestService.notas}
+                          </Typography>
+                        </Paper>
+                      </Grid>
                     )}
-                  </div>
+                  </Grid>
                 )}
 
-                <div className="flex justify-end">
-                  <button
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Button
                     onClick={() => handleViewServiceDetail(latestService.id)}
-                    className="bg-[#d84315] hover:bg-[#d84315]/90 text-white px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors"
+                    variant="contained"
+                    size="small"
+                    endIcon={<LaunchIcon />}
+                    sx={{
+                      bgcolor: "#d84315",
+                      "&:hover": { bgcolor: "rgba(216, 67, 21, 0.9)" },
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: "medium",
+                    }}
                   >
                     Ver Detalle
-                    <ExternalLink className="h-3 w-3" />
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </Box>
+              </Paper>
 
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-[#d84315]/5 rounded-lg border border-[#d84315]/20">
-                <div>
-                  <p className="font-bold text-gray-900">Historial Completo</p>
-                  <p className="text-sm text-gray-600">
+              <Paper
+                elevation={1}
+                sx={{
+                  p: 3,
+                  background: "linear-gradient(135deg, #f5f5f5 0%, rgba(216, 67, 21, 0.05) 100%)",
+                  border: "1px solid rgba(216, 67, 21, 0.2)",
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#171717" }}>
+                    Historial Completo
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
                     {servicios.length} servicio{servicios.length !== 1 ? "s" : ""} registrado
                     {servicios.length !== 1 ? "s" : ""} en total
-                  </p>
-                </div>
-                <button
+                  </Typography>
+                </Box>
+                <Button
                   onClick={handleViewAllServices}
-                  className="bg-[#d84315] hover:bg-[#d84315]/90 text-white px-4 py-2 font-medium rounded-lg flex items-center gap-2 transition-colors"
+                  variant="contained"
+                  endIcon={<LaunchIcon />}
+                  sx={{
+                    bgcolor: "#d84315",
+                    "&:hover": { bgcolor: "rgba(216, 67, 21, 0.9)" },
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: "medium",
+                  }}
                 >
                   Ver Todos
-                  <ExternalLink className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+                </Button>
+              </Paper>
+            </Box>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Wrench className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No hay servicios registrados</p>
-            </div>
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <BuildIcon sx={{ fontSize: 32, color: "grey.300", mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">
+                No hay servicios registrados
+              </Typography>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </CardContent>
+    </Card>
   )
 }
 

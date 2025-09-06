@@ -39,10 +39,11 @@ api.interceptors.response.use(
       return Promise.reject(new Error("Sesión expirada"))
     }
 
-    // El backend ahora devuelve errores en formato estándar
     const errorData = error.response?.data
     if (errorData && !errorData.success) {
-      return Promise.reject(new Error(errorData.message || "Error del servidor"))
+      // El ResponseHelper del backend estructura los errores como { success: false, error: { message, code } }
+      const errorMessage = errorData.error?.message || errorData.message || "Error del servidor"
+      return Promise.reject(new Error(errorMessage))
     }
 
     const message = error.response?.data?.message || error.message || "Error desconocido"

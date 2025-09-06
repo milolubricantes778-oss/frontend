@@ -3,173 +3,336 @@
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
-import { cn } from "../../lib/utils"
-import { Button } from "../ui/button"
-import { ScrollArea } from "../ui/scroll-area"
-import { Separator } from "../ui/separator"
-import { Badge } from "../ui/badge"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible"
 import {
-  LayoutDashboard,
-  Users,
-  Car,
-  Wrench,
-  BarChart3,
-  Settings,
-  UserCog,
-  ChevronDown,
-  ChevronRight,
-  X,
-  Cog,
-} from "lucide-react"
+  Drawer,
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
+  IconButton,
+  Collapse,
+  Divider,
+  Chip,
+  Paper,
+} from "@mui/material"
+import {
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  DirectionsCar as CarIcon,
+  Build as BuildIcon,
+  BarChart as BarChartIcon,
+  Settings as SettingsIcon,
+  ManageAccounts as ManageAccountsIcon,
+  ExpandLess,
+  ExpandMore,
+  Close as CloseIcon,
+  Tune as TuneIcon,
+  Business as BusinessIcon,
+  PersonAdd as PersonAddIcon,
+} from "@mui/icons-material"
 
 const drawerWidth = 280
 
-function Sidebar({ open, onClose }) {
+function Sidebar({ open, onClose, isMobile }) {
   const navigate = useNavigate()
+
+  return (
+    <>
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+              border: "none",
+              boxShadow: 4,
+            },
+          }}
+        >
+          <SidebarContent onNavigation={(path) => navigate(path)} onClose={onClose} showCloseButton={false} />
+        </Drawer>
+      )}
+
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          open={open}
+          onClose={onClose}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: "block", lg: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+              border: "none",
+              boxShadow: 4,
+            },
+          }}
+        >
+          <SidebarContent onNavigation={(path) => navigate(path)} onClose={onClose} showCloseButton={true} />
+        </Drawer>
+      )}
+    </>
+  )
+}
+
+function SidebarContent({ onNavigation, onClose, showCloseButton }) {
   const location = useLocation()
   const { isAdmin } = useAuth()
   const [configOpen, setConfigOpen] = useState(false)
 
   const menuItems = [
-    { text: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    { text: "Clientes", icon: Users, path: "/clientes" },
-    { text: "Vehículos", icon: Car, path: "/vehiculos" },
-    { text: "Servicios", icon: Wrench, path: "/servicios" },
-    { text: "Reportes", icon: BarChart3, path: "/reportes" },
+    { text: "Dashboard", icon: DashboardIcon, path: "/dashboard" },
+    { text: "Clientes", icon: PeopleIcon, path: "/clientes" },
+    { text: "Vehículos", icon: CarIcon, path: "/vehiculos" },
+    { text: "Servicios", icon: BuildIcon, path: "/servicios" },
+    { text: "Reportes", icon: BarChartIcon, path: "/reportes" },
   ]
 
   const configItems = [
-    { text: "General", path: "/configuracion", icon: Settings },
-    { text: "Tipos de Servicios", path: "/configuracion/tipos-servicios", icon: Cog },
-    ...(isAdmin() ? [{ text: "Usuarios", path: "/configuracion/usuarios", icon: UserCog }] : []),
+    { text: "General", path: "/configuracion", icon: SettingsIcon },
+    { text: "Tipos de Servicios", path: "/configuracion/tipos-servicios", icon: TuneIcon },
+    { text: "Empleados", path: "/configuracion/empleados", icon: PersonAddIcon },
+    { text: "Sucursales", path: "/configuracion/sucursales", icon: BusinessIcon },
+    ...(isAdmin() ? [{ text: "Usuarios", path: "/configuracion/usuarios", icon: ManageAccountsIcon }] : []),
   ]
-
-  const handleNavigation = (path) => {
-    navigate(path)
-    onClose()
-  }
 
   const isConfigPath = () => {
     return location.pathname.startsWith("/configuracion")
   }
 
+  const isActivePath = (path) => {
+    return location.pathname === path
+  }
+
   return (
-    <>
-      {/* Mobile overlay */}
-      {open && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
-
-      <div
-        className={cn(
-          "fixed left-0 top-0 z-50 h-screen bg-background border-r shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex-shrink-0",
-          open ? "translate-x-0" : "-translate-x-full",
-        )}
-        style={{ width: drawerWidth }}
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Paper
+        elevation={0}
+        sx={{
+          background: "linear-gradient(135deg, #d84315 0%, #c13711 100%)",
+          p: 2.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderRadius: 0,
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+        }}
       >
-        <div className="flex flex-col h-full">
-          <div
-            className="px-6 py-4 relative flex-shrink-0 h-16 flex items-center justify-between"
-            style={{ backgroundColor: "#d84315" }}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Avatar
+            sx={{
+              bgcolor: "rgba(255, 255, 255, 0.2)",
+              width: 42,
+              height: 42,
+              fontWeight: "bold",
+              fontSize: "1.1rem",
+            }}
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white -mb-1">Milo</h1>
-                <p className="text-white/80 text-xl font-medium -mt-1">Lubricantes</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden text-[#d84315] hover:text-white hover:bg-white/10 h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+            M
+          </Avatar>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: "bold", color: "white", fontSize: "1.1rem" }}>
+              Milo
+            </Typography>
+            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.9)", mt: -0.5, fontSize: "0.8rem" }}>
+              Lubricantes
+            </Typography>
+          </Box>
+        </Box>
+        {showCloseButton && (
+          <IconButton
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: "rgba(255, 255, 255, 0.8)",
+              bgcolor: "rgba(255, 255, 255, 0.1)",
+              "&:hover": {
+                bgcolor: "rgba(255, 255, 255, 0.2)",
+              },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
+      </Paper>
 
-          <ScrollArea className="flex-1 px-4 py-4">
-            <nav className="space-y-2">
-              {menuItems.map((item) => {
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 1.5,
+          overflowY: "auto",
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "rgba(0,0,0,0.1)",
+            borderRadius: "3px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "rgba(216, 67, 21, 0.3)",
+            borderRadius: "3px",
+            "&:hover": {
+              background: "rgba(216, 67, 21, 0.5)",
+            },
+          },
+        }}
+      >
+        <List sx={{ pt: 0 }}>
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            const isActive = isActivePath(item.path)
+
+            return (
+              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => onNavigation(item.path)}
+                  sx={{
+                    borderRadius: 2,
+                    py: 1.2,
+                    px: 1.5,
+                    bgcolor: isActive ? "#d84315" : "transparent",
+                    color: isActive ? "white" : "#171717",
+                    "&:hover": {
+                      bgcolor: isActive ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                    },
+                    boxShadow: isActive ? 2 : 0,
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Icon sx={{ color: isActive ? "white" : "#d84315", fontSize: 22 }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontWeight: isActive ? "bold" : "medium",
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )
+          })}
+
+          <Divider sx={{ my: 1.5 }} />
+
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => setConfigOpen(!configOpen)}
+              sx={{
+                borderRadius: 2,
+                py: 1.2,
+                px: 1.5,
+                bgcolor: isConfigPath() ? "#d84315" : "transparent",
+                color: isConfigPath() ? "white" : "#171717",
+                "&:hover": {
+                  bgcolor: isConfigPath() ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                },
+                boxShadow: isConfigPath() ? 2 : 0,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <SettingsIcon sx={{ color: isConfigPath() ? "white" : "#d84315", fontSize: 22 }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Configuración"
+                primaryTypographyProps={{
+                  fontWeight: isConfigPath() ? "bold" : "medium",
+                  fontSize: "0.9rem",
+                }}
+              />
+              {configOpen ? (
+                <ExpandLess sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+              ) : (
+                <ExpandMore sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+              )}
+            </ListItemButton>
+          </ListItem>
+
+          <Collapse in={configOpen} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ pl: 1.5 }}>
+              {configItems.map((item) => {
                 const Icon = item.icon
-                const isActive = location.pathname === item.path
+                const isActive = isActivePath(item.path)
 
                 return (
-                  <Button
-                    key={item.text}
-                    variant={isActive ? "default" : "ghost"}
-                    onClick={() => handleNavigation(item.path)}
-                    className={cn(
-                      "w-full justify-start h-11 px-4 font-medium transition-all duration-200",
-                      isActive ? "shadow-sm" : "hover:bg-muted",
-                      isActive && "bg-[#d84315] hover:bg-[#d84315]/90 text-white",
-                    )}
-                  >
-                    <Icon className="h-5 w-5 mr-3" />
-                    {item.text}
-                  </Button>
+                  <ListItem key={item.text} disablePadding sx={{ mb: 0.3 }}>
+                    <ListItemButton
+                      onClick={() => onNavigation(item.path)}
+                      sx={{
+                        borderRadius: 2,
+                        py: 0.8,
+                        px: 1.5,
+                        bgcolor: isActive ? "#d84315" : "transparent",
+                        color: isActive ? "white" : "#666",
+                        "&:hover": {
+                          bgcolor: isActive ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                          color: isActive ? "white" : "#171717",
+                        },
+                        boxShadow: isActive ? 1 : 0,
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        <Icon sx={{ fontSize: 18, color: isActive ? "white" : "#d84315" }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.text}
+                        primaryTypographyProps={{
+                          fontSize: "0.85rem",
+                          fontWeight: isActive ? "bold" : "medium",
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
                 )
               })}
+            </List>
+          </Collapse>
+        </List>
+      </Box>
 
-
-              <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant={isConfigPath() ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-between h-11 px-4 font-medium transition-all duration-200",
-                      isConfigPath() ? "shadow-sm bg-[#d84315] hover:bg-[#d84315]/90 text-white" : "hover:bg-muted",
-                    )}
-                  >
-                    <div className="flex items-center">
-                      <Settings className="h-5 w-5 mr-3" />
-                      Configuración
-                    </div>
-                    {configOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </Button>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent className="space-y-1 mt-2 ml-4">
-                  {configItems.map((item) => {
-                    const isActive = location.pathname === item.path
-                    const Icon = item.icon
-
-                    return (
-                      <Button
-                        key={item.text}
-                        variant={isActive ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => handleNavigation(item.path)}
-                        className={cn(
-                          "w-full justify-start h-9 px-4 text-sm font-medium transition-all duration-200",
-                          isActive
-                            ? "shadow-sm bg-[#d84315] hover:bg-[#d84315]/90 text-white"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        <Icon className="h-4 w-4 mr-3" />
-                        {item.text}
-                      </Button>
-                    )
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            </nav>
-          </ScrollArea>
-
-          <div className="p-4 border-t bg-muted/30">
-            <div className="flex flex-col items-center space-y-2">
-              <Badge variant="secondary" className="text-xs">
-                Sistema de Gestión v1.0
-              </Badge>
-              <p className="text-xs text-muted-foreground">© 2024 Milo Lubricantes</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          bgcolor: "rgba(216, 67, 21, 0.05)",
+          borderTop: "1px solid rgba(216, 67, 21, 0.2)",
+          textAlign: "center",
+          borderRadius: 0,
+          position: "sticky",
+          bottom: 0,
+          zIndex: 1,
+        }}
+      >
+        <Chip
+          label="Sistema v1.0"
+          size="small"
+          sx={{
+            bgcolor: "white",
+            color: "#d84315",
+            border: "1px solid rgba(216, 67, 21, 0.3)",
+            fontWeight: "medium",
+            mb: 0.5,
+            fontSize: "0.7rem",
+            height: 24,
+          }}
+        />
+        <Typography variant="caption" sx={{ display: "block", color: "#666", fontSize: "0.7rem" }}>
+          © 2025 Milo Lubricantes
+        </Typography>
+      </Paper>
+    </Box>
   )
 }
 

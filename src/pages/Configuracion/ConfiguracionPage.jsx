@@ -5,18 +5,38 @@ import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { useSearchParams } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Label } from "../../components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { useToast } from "../../hooks/useToast"
-import { useErrorHandler } from "../../hooks/useErrorHandler"
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  Tabs,
+  Tab,
+  Grid,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  Backdrop,
+  InputAdornment,
+  Divider,
+} from "@mui/material"
+import {
+  Settings,
+  Business,
+  Person,
+  Save,
+  Email,
+  Phone,
+  LocationOn,
+  Description,
+  Lock,
+  Cancel,
+} from "@mui/icons-material"
 import { useAuth } from "../../contexts/AuthContext"
-import ErrorMessage from "../../components/Common/ErrorMessage"
-import LoadingSpinner from "../../components/Common/LoadingSpinner"
 import configuracionService from "../../services/configuracionService"
-import { Settings, Building, User, Save, Mail, Phone, MapPin, FileText, Lock } from "lucide-react"
+import ChangePasswordModal from "../../components/auth/ChangePasswordModal"
 
 const businessSchema = yup.object({
   nombreNegocio: yup.string().required("El nombre del negocio es requerido"),
@@ -30,11 +50,16 @@ const ConfiguracionPage = () => {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [searchParams] = useSearchParams()
-  const { toast } = useToast()
-  const { error, handleError, clearError } = useErrorHandler(toast)
   const { user } = useAuth()
+  const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
 
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "business")
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
+
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "profile" ? 1 : 0)
 
   const {
     register,
@@ -59,8 +84,10 @@ const ConfiguracionPage = () => {
 
   useEffect(() => {
     const tab = searchParams.get("tab")
-    if (tab && (tab === "business" || tab === "profile")) {
-      setActiveTab(tab)
+    if (tab === "profile") {
+      setActiveTab(1)
+    } else {
+      setActiveTab(0)
     }
   }, [searchParams])
 
@@ -74,7 +101,11 @@ const ConfiguracionPage = () => {
         })
       }
     } catch (error) {
-      handleError(error)
+      setSnackbar({
+        open: true,
+        message: "Error al cargar la configuración",
+        severity: "error",
+      })
     } finally {
       setInitialLoading(false)
     }
@@ -83,215 +114,357 @@ const ConfiguracionPage = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true)
-      clearError()
       await configuracionService.updateConfiguracion(data)
-      toast.success("Configuración guardada", "Los cambios se han guardado exitosamente")
+      setSnackbar({
+        open: true,
+        message: "Configuración guardada exitosamente",
+        severity: "success",
+      })
     } catch (error) {
-      handleError(error)
+      setSnackbar({
+        open: true,
+        message: "Error al guardar la configuración",
+        severity: "error",
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
+  }
+
   if (initialLoading) {
-    return <LoadingSpinner size="lg" text="Cargando configuración..." />
+    return (
+      <Backdrop open={true} sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <CircularProgress color="inherit" />
+          <Typography sx={{ mt: 2 }}>Cargando configuración...</Typography>
+        </Box>
+      </Backdrop>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <div className="p-2 bg-[#d84315]/10 rounded-lg">
-          <Settings className="h-6 w-6 text-[#d84315]" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-          <p className="text-sm text-gray-500">Gestiona la información del negocio y tu perfil</p>
-        </div>
-      </div>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: "bold", color: "#171717", mb: 0.5 }}>
+            Configuración
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            Gestiona la información del negocio y tu perfil
+          </Typography>
+        </Box>
+      </Box>
 
-      <ErrorMessage message={error} onClose={clearError} />
+      <Card elevation={2} sx={{ borderRadius: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{
+            borderBottom: 1,
+            borderColor: "divider",
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 500,
+            },
+            "& .Mui-selected": {
+              color: "#d84315 !important",
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#d84315",
+            },
+          }}
+        >
+          <Tab icon={<Business />} label="Información del Negocio" iconPosition="start" sx={{ minHeight: 64 }} />
+          <Tab icon={<Person />} label="Mi Perfil" iconPosition="start" sx={{ minHeight: 64 }} />
+        </Tabs>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="business" className="flex items-center space-x-2">
-            <Building className="h-4 w-4" />
-            <span>Información del Negocio</span>
-          </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
-            <span>Mi Perfil</span>
-          </TabsTrigger>
-        </TabsList>
+        <CardContent sx={{ p: 3 }}>
+          {activeTab === 0 && (
+            <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+              <Typography variant="h6" sx={{ mb: 3, display: "flex", alignItems: "center", color: "#d84315" }}>
+                <Business sx={{ mr: 1 }} />
+                Datos del Negocio
+              </Typography>
 
-        <TabsContent value="business" className="space-y-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building className="h-5 w-5 text-[#d84315]" />
-                  <span>Datos del Negocio</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="nombreNegocio" className="flex items-center space-x-2">
-                      <Building className="h-4 w-4 text-gray-500" />
-                      <span>Nombre del Negocio</span>
-                    </Label>
-                    <Input
-                      id="nombreNegocio"
-                      {...register("nombreNegocio")}
-                      className={errors.nombreNegocio ? "border-red-500" : ""}
-                    />
-                    {errors.nombreNegocio && <p className="text-red-500 text-sm">{errors.nombreNegocio.message}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cuit" className="flex items-center space-x-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span>CUIT</span>
-                    </Label>
-                    <Input
-                      id="cuit"
-                      placeholder="XX-XXXXXXXX-X"
-                      {...register("cuit")}
-                      className={errors.cuit ? "border-red-500" : ""}
-                    />
-                    {errors.cuit && <p className="text-red-500 text-sm">{errors.cuit.message}</p>}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="direccion" className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span>Dirección</span>
-                  </Label>
-                  <Input
-                    id="direccion"
-                    {...register("direccion")}
-                    className={errors.direccion ? "border-red-500" : ""}
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre del Negocio"
+                    {...register("nombreNegocio")}
+                    error={!!errors.nombreNegocio}
+                    helperText={errors.nombreNegocio?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Business color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#d84315",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#d84315",
+                      },
+                    }}
                   />
-                  {errors.direccion && <p className="text-red-500 text-sm">{errors.direccion.message}</p>}
-                </div>
+                </Grid>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="telefono" className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span>Teléfono</span>
-                    </Label>
-                    <Input
-                      id="telefono"
-                      {...register("telefono")}
-                      className={errors.telefono ? "border-red-500" : ""}
-                    />
-                    {errors.telefono && <p className="text-red-500 text-sm">{errors.telefono.message}</p>}
-                  </div>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="CUIT"
+                    placeholder="XX-XXXXXXXX-X"
+                    {...register("cuit")}
+                    error={!!errors.cuit}
+                    helperText={errors.cuit?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Description color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#d84315",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#d84315",
+                      },
+                    }}
+                  />
+                </Grid>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span>Email</span>
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      {...register("email")}
-                      className={errors.email ? "border-red-500" : ""}
-                    />
-                    {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Dirección"
+                    {...register("direccion")}
+                    error={!!errors.direccion}
+                    helperText={errors.direccion?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocationOn color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#d84315",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#d84315",
+                      },
+                    }}
+                  />
+                </Grid>
 
-            <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={() => reset()} disabled={loading}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading} className="bg-[#d84315] hover:bg-[#d84315]/90">
-                {loading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Guardando...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar Cambios
-                  </div>
-                )}
-              </Button>
-            </div>
-          </form>
-        </TabsContent>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Teléfono"
+                    {...register("telefono")}
+                    error={!!errors.telefono}
+                    helperText={errors.telefono?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Phone color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#d84315",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#d84315",
+                      },
+                    }}
+                  />
+                </Grid>
 
-        <TabsContent value="profile" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-[#d84315]" />
-                <span>Mi Perfil</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span>Nombre</span>
-                  </Label>
-                  <Input value={user?.nombre || ""} disabled className="bg-gray-50" />
-                </div>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    {...register("email")}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#d84315",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#d84315",
+                      },
+                    }}
+                  />
+                </Grid>
+              </Grid>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <span>Email</span>
-                  </Label>
-                  <Input value={user?.email || ""} disabled className="bg-gray-50" />
-                </div>
-              </div>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 4 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => reset()}
+                  disabled={loading}
+                  startIcon={<Cancel />}
+                  sx={{
+                    borderColor: "#171717",
+                    color: "#171717",
+                    "&:hover": {
+                      borderColor: "#171717",
+                      backgroundColor: "rgba(23, 23, 23, 0.04)",
+                    },
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Save />}
+                  sx={{
+                    backgroundColor: "#d84315",
+                    "&:hover": {
+                      backgroundColor: "rgba(216, 67, 21, 0.9)",
+                    },
+                    borderRadius: 2,
+                  }}
+                >
+                  {loading ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+              </Box>
+            </Box>
+          )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <Settings className="h-4 w-4 text-gray-500" />
-                    <span>Rol</span>
-                  </Label>
-                  <Input
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="h6" sx={{ mb: 3, display: "flex", alignItems: "center", color: "#d84315" }}>
+                <Person sx={{ mr: 1 }} />
+                Mi Perfil
+              </Typography>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Nombre"
+                    value={user?.nombre || ""}
+                    disabled
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Person color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={user?.email || ""}
+                    disabled
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Rol"
                     value={user?.role === "admin" ? "Administrador" : "Empleado"}
                     disabled
-                    className="bg-gray-50"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Settings color="action" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
                   />
-                </div>
+                </Grid>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-gray-500" />
-                    <span>Usuario</span>
-                  </Label>
-                  <Input value={user?.usuario || ""} disabled className="bg-gray-50" />
-                </div>
-              </div>
+              </Grid>
 
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-500 mb-4">
-                  Para modificar tu información personal, contacta al administrador del sistema.
-                </p>
-                <div className="flex space-x-4">
-                  <Button variant="outline" className="flex items-center space-x-2 bg-transparent">
-                    <Lock className="h-4 w-4" />
-                    <span>Cambiar Contraseña</span>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+              <Divider sx={{ my: 3 }} />
+
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                Para modificar tu información personal, contacta al administrador del sistema.
+              </Typography>
+
+              <Button
+                variant="outlined"
+                startIcon={<Lock />}
+                onClick={() => setChangePasswordModalOpen(true)}
+                sx={{
+                  borderColor: "#d84315",
+                  color: "#d84315",
+                  "&:hover": {
+                    borderColor: "#d84315",
+                    backgroundColor: "rgba(216, 67, 21, 0.04)",
+                  },
+                }}
+              >
+                Cambiar Contraseña
+              </Button>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      <ChangePasswordModal open={changePasswordModalOpen} onClose={() => setChangePasswordModalOpen(false)} />
+    </Box>
   )
 }
 

@@ -8,7 +8,9 @@ import DashboardPage from "./pages/Dashboard/DashboardPage"
 import ClientesPage from "./pages/Clientes/ClientesPage"
 import VehiculosPage from "./pages/Vehiculos/VehiculosPage"
 import ProtectedRoute from "./components/Auth/ProtectedRoute"
-import UsersManagementPage from "./pages/Auth/UsersManagementPage"
+import GestionUsuariosPage from "./pages/configuracion/GestionUsuariosPage"
+import GestionEmpleadosPage from "./pages/configuracion/GestionEmpleadosPage"
+import GestionSucursalesPage from "./pages/configuracion/GestionSucursalesPage"
 import ServiciosPage from "./pages/Servicios/ServiciosPage"
 import ConfiguracionPage from "./pages/Configuracion/ConfiguracionPage"
 import TiposServiciosPage from "./pages/Configuracion/TiposServiciosPage"
@@ -50,11 +52,13 @@ function App() {
           {/* Configuración */}
           <Route path="configuracion" element={<ConfiguracionPage />} />
           <Route path="configuracion/tipos-servicios" element={<TiposServiciosPage />} />
+          <Route path="configuracion/empleados" element={<GestionEmpleadosPage />} />
+          <Route path="configuracion/sucursales" element={<GestionSucursalesPage />} />
           <Route
             path="configuracion/usuarios"
             element={
               <ProtectedRoute requiredRole="admin">
-                <UsersManagementPage />
+                <GestionUsuariosPage />
               </ProtectedRoute>
             }
           />

@@ -2,11 +2,12 @@ import api from "./api.js"
 
 export const clientesService = {
   // Obtener todos los clientes con paginación y filtros
-  getClientes: async (page = 1, limit = 10, search = "") => {
+  getClientes: async (page = 1, limit = 10, search = "", searchBy = "") => {
     const params = new URLSearchParams({
       page,
       limit,
       ...(search && { search }),
+      ...(searchBy && { searchBy }),
     })
 
     const response = await api.get(`/clientes?${params}`)
@@ -38,8 +39,13 @@ export const clientesService = {
   },
 
   // Buscar clientes por DNI, nombre o apellido
-  searchClientes: async (searchTerm) => {
-    const response = await api.get(`/clientes?search=${searchTerm}`)
+  searchClientes: async (searchTerm, searchBy = "") => {
+    const params = new URLSearchParams({
+      search: searchTerm,
+      ...(searchBy && { searchBy }),
+    })
+
+    const response = await api.get(`/clientes?${params}`)
     return response.data.data || []
   },
 

@@ -21,8 +21,23 @@ import {
   TextField,
   Chip,
   Tooltip,
+  Card,
+  CardContent,
+  Snackbar,
+  Alert,
+  Avatar,
+  InputAdornment,
+  Divider,
 } from "@mui/material"
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon } from "@mui/icons-material"
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+  Build as BuildIcon,
+  Title as TitleIcon,
+  Description as DescriptionIcon,
+} from "@mui/icons-material"
 import { useTiposServicios } from "../../hooks/useTiposServicios"
 
 const TiposServiciosPage = () => {
@@ -46,6 +61,11 @@ const TiposServiciosPage = () => {
   })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tipoServicioToDelete, setTipoServicioToDelete] = useState(null)
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  })
 
   useEffect(() => {
     loadTiposServicios()
@@ -56,6 +76,14 @@ const TiposServiciosPage = () => {
       loadTiposServicios()
     }
   }, [pagination.currentPage])
+
+  const showNotification = (message, severity = "success") => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    })
+  }
 
   const handleSearch = () => {
     loadTiposServicios(1, searchTerm)
@@ -91,12 +119,14 @@ const TiposServiciosPage = () => {
     try {
       if (editingTipoServicio) {
         await updateTipoServicio(editingTipoServicio.id, formData)
+        showNotification("Tipo de servicio actualizado exitosamente")
       } else {
         await createTipoServicio(formData)
+        showNotification("Tipo de servicio creado exitosamente")
       }
       handleCloseDialog()
     } catch (error) {
-      // Error ya manejado por el hook
+      showNotification("Error al procesar la solicitud", "error")
     }
   }
 
@@ -111,8 +141,9 @@ const TiposServiciosPage = () => {
         await deleteTipoServicio(tipoServicioToDelete.id)
         setDeleteDialogOpen(false)
         setTipoServicioToDelete(null)
+        showNotification("Tipo de servicio eliminado exitosamente")
       } catch (error) {
-        // Error ya manejado por el hook
+        showNotification("Error al eliminar el tipo de servicio", "error")
       }
     }
   }
@@ -132,45 +163,73 @@ const TiposServiciosPage = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-          Tipos de Servicios
-        </Typography>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: "#171717" }}>
+            Tipos de Servicios
+          </Typography>
+          <Typography variant="body1" color="textSecondary" sx={{ mt: 1 }}>
+            Gestiona los tipos de servicios disponibles en tu lubricentro
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
-          sx={{ bgcolor: "#1976d2" }}
+          sx={{
+            bgcolor: "#d84315",
+            "&:hover": { bgcolor: "#bf360c" },
+            borderRadius: 2,
+            textTransform: "none",
+            fontWeight: 600,
+          }}
         >
           Nuevo Tipo de Servicio
         </Button>
       </Box>
 
-      {/* Barra de búsqueda */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <TextField
-            fullWidth
-            placeholder="Buscar tipos de servicios..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <Button variant="contained" startIcon={<SearchIcon />} onClick={handleSearch} sx={{ minWidth: 120 }}>
-            Buscar
-          </Button>
-        </Box>
-      </Paper>
+      <Card elevation={2} sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <TextField
+              fullWidth
+              placeholder="Buscar tipos de servicios..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                },
+              }}
+            />
+            <Button
+              variant="contained"
+              startIcon={<SearchIcon />}
+              onClick={handleSearch}
+              sx={{
+                minWidth: 120,
+                bgcolor: "#d84315",
+                "&:hover": { bgcolor: "#bf360c" },
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Buscar
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
 
-      {/* Tabla de tipos de servicios */}
-      <Paper>
+      <Paper elevation={2}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                <TableCell sx={{ fontWeight: "bold" }}>Nombre</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Descripción</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Estado</TableCell>
-                <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Acciones</TableCell>
+              <TableRow sx={{ bgcolor: "#d84315" }}>
+                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Nombre</TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Descripción</TableCell>
+                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Estado</TableCell>
+                <TableCell sx={{ fontWeight: "bold", textAlign: "center", color: "white" }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -184,9 +243,9 @@ const TiposServiciosPage = () => {
                 </TableRow>
               ) : Array.isArray(tiposServicios) && tiposServicios.length > 0 ? (
                 tiposServicios.map((tipoServicio) => (
-                  <TableRow key={tipoServicio.id} hover>
-                    <TableCell sx={{ fontWeight: "medium" }}>{tipoServicio.nombre}</TableCell>
-                    <TableCell>{tipoServicio.descripcion || "-"}</TableCell>
+                  <TableRow key={tipoServicio.id} hover sx={{ "&:hover": { bgcolor: "rgba(216, 67, 21, 0.05)" } }}>
+                    <TableCell sx={{ fontWeight: "medium", color: "#171717" }}>{tipoServicio.nombre}</TableCell>
+                    <TableCell sx={{ color: "#171717" }}>{tipoServicio.descripcion || "-"}</TableCell>
                     <TableCell>
                       <Chip
                         label={tipoServicio.activo ? "Activo" : "Inactivo"}
@@ -196,12 +255,26 @@ const TiposServiciosPage = () => {
                     </TableCell>
                     <TableCell sx={{ textAlign: "center" }}>
                       <Tooltip title="Editar">
-                        <IconButton onClick={() => handleOpenDialog(tipoServicio)} color="primary" size="small">
+                        <IconButton
+                          onClick={() => handleOpenDialog(tipoServicio)}
+                          size="small"
+                          sx={{
+                            color: "#171717",
+                            "&:hover": { bgcolor: "rgba(23, 23, 23, 0.1)" },
+                          }}
+                        >
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Eliminar">
-                        <IconButton onClick={() => handleDeleteClick(tipoServicio)} color="error" size="small">
+                        <IconButton
+                          onClick={() => handleDeleteClick(tipoServicio)}
+                          size="small"
+                          sx={{
+                            color: "#f44336",
+                            "&:hover": { bgcolor: "rgba(244, 67, 54, 0.1)" },
+                          }}
+                        >
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
@@ -235,33 +308,153 @@ const TiposServiciosPage = () => {
       </Paper>
 
       {/* Dialog para crear/editar */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingTipoServicio ? "Editar Tipo de Servicio" : "Nuevo Tipo de Servicio"}</DialogTitle>
-        <DialogContent>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: "hidden",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #d84315 0%, #bf360c 100%)",
+            color: "white",
+            p: 3,
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <Avatar
+            sx={{
+              bgcolor: "rgba(255, 255, 255, 0.2)",
+              width: 56,
+              height: 56,
+            }}
+          >
+            <BuildIcon sx={{ fontSize: 28 }} />
+          </Avatar>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: "bold", mb: 0.5 }}>
+              {editingTipoServicio ? "Editar Tipo de Servicio" : "Nuevo Tipo de Servicio"}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {editingTipoServicio
+                ? "Modifica la información del tipo de servicio"
+                : "Crea un nuevo tipo de servicio para tu lubricentro"}
+            </Typography>
+          </Box>
+        </Box>
+
+        <DialogContent sx={{ p: 3 }}>
           <Box sx={{ pt: 1 }}>
             <TextField
               fullWidth
-              label="Nombre"
+              label="Nombre del Tipo de Servicio"
               value={formData.nombre}
               onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
               margin="normal"
               required
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <TitleIcon sx={{ color: "#d84315" }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "&:hover fieldset": {
+                    borderColor: "#d84315",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#d84315",
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#d84315",
+                },
+              }}
             />
+
             <TextField
               fullWidth
-              label="Descripción"
+              label="Descripción (Opcional)"
               value={formData.descripcion}
               onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
               margin="normal"
               multiline
               rows={3}
+              placeholder="Describe brevemente este tipo de servicio..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
+                    <DescriptionIcon sx={{ color: "#d84315" }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "&:hover fieldset": {
+                    borderColor: "#d84315",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#d84315",
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#d84315",
+                },
+              }}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={!formData.nombre.trim()}>
-            {editingTipoServicio ? "Actualizar" : "Crear"}
+
+        <Divider />
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button
+            onClick={handleCloseDialog}
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              px: 3,
+              color: "#666",
+              "&:hover": {
+                bgcolor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={!formData.nombre.trim()}
+            sx={{
+              bgcolor: "#d84315",
+              "&:hover": {
+                bgcolor: "#bf360c",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(216, 67, 21, 0.3)",
+              },
+              "&:disabled": {
+                bgcolor: "#ccc",
+              },
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: 2,
+              px: 3,
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            {editingTipoServicio ? "Actualizar Tipo" : "Crear Tipo"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -275,12 +468,35 @@ const TiposServiciosPage = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: "none" }}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            sx={{ textTransform: "none", fontWeight: 600 }}
+          >
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={4000}
+        onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setNotification((prev) => ({ ...prev, open: false }))}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }

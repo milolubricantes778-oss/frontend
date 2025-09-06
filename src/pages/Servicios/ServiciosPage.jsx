@@ -1,17 +1,33 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "@/hooks/use-toast"
-import AgregarServicioModal from "@/components/Servicios/AgregarServicioModal"
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Stepper,
+  Step,
+  StepLabel,
+  Grid,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Snackbar,
+  Alert,
+  InputAdornment,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+} from "@mui/material"
 import {
   User,
   Car,
@@ -24,17 +40,23 @@ import {
   Trash2,
   Search,
   Keyboard,
+  X,
+  Building2,
 } from "lucide-react"
-import { useClientes } from "@/hooks/useClientes"
-import { useVehiculos } from "@/hooks/useVehiculos"
-import { useTiposServicios } from "@/hooks/useTiposServicios"
-import { useServicios } from "@/hooks/useServicios"
+import AgregarServicioModal from "../../components/Servicios/AgregarServicioModal"
+import { useClientes } from "../../hooks/useClientes"
+import { useVehiculos } from "../../hooks/useVehiculos"
+import { useTiposServicios } from "../../hooks/useTiposServicios"
+import { useServicios } from "../../hooks/useServicios"
+import useEmpleados from "../../hooks/useEmpleados"
+import useSucursales from "../../hooks/useSucursales"
 
 const steps = [
   { id: 0, title: "Cliente", icon: User },
   { id: 1, title: "Vehículo", icon: Car },
-  { id: 2, title: "Servicios", icon: Wrench },
-  { id: 3, title: "Confirmación", icon: FileText },
+  { id: 2, title: "Sucursal y Empleados", icon: Building2 },
+  { id: 3, title: "Servicios", icon: Wrench },
+  { id: 4, title: "Confirmación", icon: FileText },
 ]
 
 const ServiciosPage = () => {
@@ -42,29 +64,52 @@ const ServiciosPage = () => {
   const [formData, setFormData] = useState({
     clienteId: null,
     vehiculoId: null,
+    sucursalId: null,
+    empleados: [],
     observaciones: "",
     precioReferencia: 0,
     items: [],
   })
 
   const { clientes, loadClientes } = useClientes()
-  const { vehiculos, loadVehiculos } = useVehiculos()
+  const { vehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos() // Agregando loadVehiculosByCliente
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, loading } = useServicios()
+  const { empleadosActivos, loadEmpleadosActivos, loadEmpleadosBySucursal } = useEmpleados()
+  const { sucursalesActivas, loadSucursalesActivas } = useSucursales()
 
   const [selectedCliente, setSelectedCliente] = useState(null)
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
+  const [selectedSucursal, setSelectedSucursal] = useState(null)
   const [clienteSearch, setClienteSearch] = useState("")
   const [showItemDialog, setShowItemDialog] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({ open: true, message, severity })
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false })
+  }
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        // Only proceed if we're not in the final step and can proceed
+        if (activeStep < 4 && canProceed()) {
+          e.preventDefault()
+          handleNext()
+        }
+        return
+      }
+
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
           case "ArrowRight":
             e.preventDefault()
-            if (activeStep < 3 && canProceed()) handleNext()
+            if (activeStep < 4 && canProceed()) handleNext()
             break
           case "ArrowLeft":
             e.preventDefault()
@@ -72,7 +117,7 @@ const ServiciosPage = () => {
             break
           case "Enter":
             e.preventDefault()
-            if (activeStep === 3 && canProceed()) handleSubmit()
+            if (activeStep === 4 && canProceed()) handleSubmit()
             break
           case "/":
             e.preventDefault()
@@ -84,21 +129,32 @@ const ServiciosPage = () => {
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [activeStep])
+  }, [activeStep, formData]) // Added formData as dependency to re-register event listener when form data changes
 
   useEffect(() => {
     loadClientes()
     loadTiposServicios()
+    loadSucursalesActivas()
   }, [])
 
   useEffect(() => {
     if (formData.clienteId) {
-      loadVehiculos(1, 10, "", formData.clienteId)
+      loadVehiculosByCliente(formData.clienteId) // Usando función específica para cargar vehículos por cliente
     }
-  }, [formData.clienteId])
+  }, [formData.clienteId]) // Removiendo loadVehiculosByCliente del array de dependencias para evitar bucle infinito
+
+  useEffect(() => {
+    if (formData.sucursalId) {
+      loadEmpleadosBySucursal(formData.sucursalId)
+      setFormData((prev) => ({
+        ...prev,
+        empleados: [],
+      }))
+    }
+  }, [formData.sucursalId, loadEmpleadosBySucursal])
 
   const handleNext = () => {
-    setActiveStep((prev) => Math.min(prev + 1, 3))
+    setActiveStep((prev) => Math.min(prev + 1, 4))
   }
 
   const handleBack = () => {
@@ -110,12 +166,15 @@ const ServiciosPage = () => {
     setFormData({
       clienteId: null,
       vehiculoId: null,
+      sucursalId: null,
+      empleados: [],
       observaciones: "",
       precioReferencia: 0,
       items: [],
     })
     setSelectedCliente(null)
     setSelectedVehiculo(null)
+    setSelectedSucursal(null)
     setClienteSearch("")
   }
 
@@ -137,16 +196,29 @@ const ServiciosPage = () => {
     }))
   }
 
+  const handleSucursalSelect = (sucursalId) => {
+    const sucursal = sucursalesActivas.find((s) => s.id === sucursalId)
+    setSelectedSucursal(sucursal)
+    setFormData((prev) => ({
+      ...prev,
+      sucursalId: sucursalId,
+      empleados: [],
+    }))
+  }
+
+  const handleEmpleadosChange = (empleadosIds) => {
+    setFormData((prev) => ({
+      ...prev,
+      empleados: empleadosIds,
+    }))
+  }
+
   const handleAddItem = (newItem) => {
     setFormData((prev) => ({
       ...prev,
       items: [...prev.items, newItem],
     }))
-
-    toast({
-      title: "Servicio agregado",
-      description: "El servicio se agregó correctamente a la lista.",
-    })
+    showSnackbar("El servicio se agregó correctamente a la lista.")
   }
 
   const handleRemoveItem = (itemId) => {
@@ -161,6 +233,8 @@ const ServiciosPage = () => {
       const submitData = {
         cliente_id: formData.clienteId,
         vehiculo_id: formData.vehiculoId,
+        sucursal_id: formData.sucursalId,
+        empleados: formData.empleados,
         observaciones: formData.observaciones,
         precio_referencia: formData.precioReferencia,
         items: formData.items.map((item) => ({
@@ -172,17 +246,10 @@ const ServiciosPage = () => {
       }
 
       await createServicio(submitData)
-      toast({
-        title: "¡Servicio creado exitosamente!",
-        description: "El servicio ha sido registrado en el sistema.",
-      })
-      setActiveStep(4)
+      showSnackbar("¡Servicio creado exitosamente!")
+      setActiveStep(5)
     } catch (error) {
-      toast({
-        title: "Error al crear servicio",
-        description: error.message,
-        variant: "destructive",
-      })
+      showSnackbar(error.message, "error")
     }
   }
 
@@ -193,8 +260,10 @@ const ServiciosPage = () => {
       case 1:
         return formData.vehiculoId !== null
       case 2:
-        return formData.items.length > 0
+        return formData.sucursalId !== null
       case 3:
+        return formData.items.length > 0
+      case 4:
         return true
       default:
         return false
@@ -209,418 +278,561 @@ const ServiciosPage = () => {
     switch (activeStep) {
       case 0:
         return (
-          <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-[#d84315]" />
-                  <h2 className="text-lg font-semibold text-[#171717]">Seleccionar Cliente</h2>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 0}
-                    size="sm"
-                    className="h-8 px-3 text-sm border border-gray-300 hover:border-[#d84315] hover:text-[#d84315] rounded-lg bg-transparent"
-                  >
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                    Atrás
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canProceed()}
-                    className="bg-[#d84315] hover:bg-[#d84315]/90 h-8 px-3 text-sm rounded-lg"
-                    size="sm"
-                  >
-                    Siguiente
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
+          <Card elevation={2} sx={{ height: 400, display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ p: 3, pb: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: "#d84315", color: "white" }}>
+                  <User size={16} />
+                </Box>
+                <Typography variant="h6" sx={{ color: "#171717", fontWeight: 600 }}>
+                  Seleccionar Cliente
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                Busca y selecciona el cliente para quien realizarás el servicio
+              </Typography>
+            </CardContent>
+            <CardContent sx={{ p: 3, flex: 1, overflow: "auto" }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Buscar cliente por nombre, apellido o DNI..."
+                value={clienteSearch}
+                onChange={(e) => setClienteSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search size={16} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    "&:hover fieldset": { borderColor: "#d84315" },
+                    "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                  },
+                }}
+              />
 
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar cliente..."
-                  value={clienteSearch}
-                  onChange={(e) => setClienteSearch(e.target.value)}
-                  className="pl-10 h-10 border border-gray-300 focus:border-[#d84315] rounded-lg"
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 min-h-0">
               {clienteSearch.trim() && (
-                <div className="h-full overflow-y-auto pr-2 space-y-2">
+                <Box
+                  sx={{
+                    maxHeight: 240,
+                    overflow: "auto",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 2,
+                    p: 1,
+                    bgcolor: "#fafafa",
+                  }}
+                >
                   {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente) => (
-                      <div
-                        key={cliente.id}
-                        className={`cursor-pointer p-3 rounded-lg border transition-colors ${
-                          selectedCliente?.id === cliente.id
-                            ? "border-[#d84315] bg-[#d84315]/5"
-                            : "border-gray-200 hover:border-[#d84315]/50 hover:bg-gray-50"
-                        }`}
-                        onClick={() => handleClienteSelect(cliente)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-medium text-[#171717]">
-                              {cliente.nombre} {cliente.apellido}
-                            </h3>
-                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                              <span>DNI: {cliente.dni || "N/A"}</span>
-                              <span>Tel: {cliente.telefono || "N/A"}</span>
-                            </div>
-                          </div>
-                          {selectedCliente?.id === cliente.id && <CheckCircle className="h-4 w-4 text-[#d84315]" />}
-                        </div>
-                      </div>
-                    ))
+                    <Grid container spacing={1}>
+                      {filteredClientes.map((cliente) => (
+                        <Grid item xs={12} key={cliente.id}>
+                          <Card
+                            elevation={selectedCliente?.id === cliente.id ? 2 : 0}
+                            sx={{
+                              cursor: "pointer",
+                              border: selectedCliente?.id === cliente.id ? "2px solid #d84315" : "1px solid #e0e0e0",
+                              bgcolor: selectedCliente?.id === cliente.id ? "#d84315" + "08" : "white",
+                              "&:hover": { borderColor: "#d84315", bgcolor: "#f5f5f5" },
+                              transition: "all 0.2s",
+                            }}
+                            onClick={() => handleClienteSelect(cliente)}
+                          >
+                            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 600 }}>
+                                    {cliente.nombre} {cliente.apellido}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                                    DNI: {cliente.dni || "No especificado"}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                    Tel: {cliente.telefono || "No especificado"}
+                                  </Typography>
+                                </Box>
+                                {selectedCliente?.id === cliente.id && <CheckCircle size={16} color="#d84315" />}
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center py-8">
-                        <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">No se encontraron clientes</p>
-                      </div>
-                    </div>
+                    <Typography variant="body2" sx={{ textAlign: "center", py: 2, color: "text.secondary" }}>
+                      No se encontraron clientes con ese criterio
+                    </Typography>
                   )}
-                </div>
+                </Box>
               )}
 
               {!clienteSearch.trim() && selectedCliente && (
-                <div className="flex items-center justify-center h-full">
-                  <div className="p-4 border border-[#d84315] bg-[#d84315]/5 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-4 w-4 text-[#d84315]" />
-                      <span className="font-medium text-[#171717]">Cliente seleccionado</span>
-                    </div>
-                    <p className="text-sm">
-                      {selectedCliente.nombre} {selectedCliente.apellido}
-                    </p>
-                    <p className="text-xs text-muted-foreground">DNI: {selectedCliente.dni || "No especificado"}</p>
-                  </div>
-                </div>
+                <Card elevation={1} sx={{ border: "2px solid #d84315", bgcolor: "#d84315" + "08" }}>
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 600 }}>
+                          {selectedCliente.nombre} {selectedCliente.apellido}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                          DNI: {selectedCliente.dni || "No especificado"}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          Tel: {selectedCliente.telefono || "No especificado"}
+                        </Typography>
+                      </Box>
+                      <CheckCircle size={16} color="#d84315" />
+                    </Box>
+                  </CardContent>
+                </Card>
               )}
 
               {!clienteSearch.trim() && !selectedCliente && (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center py-8">
-                    <Search className="h-8 w-8 text-[#d84315] mx-auto mb-2" />
-                    <p className="text-sm text-[#d84315] font-medium">Buscar Cliente</p>
-                    <p className="text-xs text-muted-foreground">Escribe para encontrar un cliente</p>
-                  </div>
-                </div>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 4,
+                    border: "2px dashed #d84315",
+                    borderRadius: 2,
+                    bgcolor: "#d84315" + "08",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    Escribe en el buscador para encontrar un cliente
+                  </Typography>
+                </Box>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )
 
       case 1:
         return (
-          <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Car className="h-4 w-4 text-[#d84315]" />
-                  <h2 className="text-lg font-semibold text-[#171717]">Seleccionar Vehículo</h2>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 0}
-                    size="sm"
-                    className="h-8 px-3 text-sm border border-gray-300 hover:border-[#d84315] hover:text-[#d84315] rounded-lg bg-transparent"
-                  >
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                    Atrás
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canProceed()}
-                    className="bg-[#d84315] hover:bg-[#d84315]/90 h-8 px-3 text-sm rounded-lg"
-                    size="sm"
-                  >
-                    Siguiente
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 min-h-0">
+          <Card elevation={2} sx={{ height: 400, display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ p: 3, pb: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: "#d84315", color: "white" }}>
+                  <Car size={16} />
+                </Box>
+                <Typography variant="h6" sx={{ color: "#171717", fontWeight: 600 }}>
+                  Seleccionar Vehículo
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                Elige el vehículo del cliente que recibirá el servicio
+              </Typography>
+            </CardContent>
+            <CardContent sx={{ p: 3, flex: 1, overflow: "auto" }}>
               {vehiculos.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center py-8">
-                    <Car className="h-8 w-8 text-[#d84315] mx-auto mb-2" />
-                    <p className="text-sm text-[#d84315] font-medium">Sin Vehículos</p>
-                    <p className="text-xs text-muted-foreground">El cliente no tiene vehículos registrados</p>
-                  </div>
-                </div>
+                <Card elevation={0} sx={{ border: "1px solid #d84315", bgcolor: "#d84315" + "08", p: 2 }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    El cliente seleccionado no tiene vehículos registrados.
+                  </Typography>
+                </Card>
               ) : (
-                <div className="h-full overflow-y-auto pr-2 space-y-2">
+                <Grid container spacing={2}>
                   {vehiculos.map((vehiculo) => (
-                    <div
-                      key={vehiculo.id}
-                      className={`cursor-pointer p-3 rounded-lg border transition-colors ${
-                        selectedVehiculo?.id === vehiculo.id
-                          ? "border-[#d84315] bg-[#d84315]/5"
-                          : "border-gray-200 hover:border-[#d84315]/50 hover:bg-gray-50"
-                      }`}
-                      onClick={() => handleVehiculoSelect(vehiculo)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium text-[#171717]">{vehiculo.patente}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {vehiculo.marca} {vehiculo.modelo}
-                          </p>
-                          <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                            <span>Año: {vehiculo.año}</span>
-                            <span>Km: {vehiculo.kilometraje?.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        {selectedVehiculo?.id === vehiculo.id && <CheckCircle className="h-4 w-4 text-[#d84315]" />}
-                      </div>
-                    </div>
+                    <Grid item xs={12} sm={6} md={4} key={vehiculo.id}>
+                      <Card
+                        elevation={selectedVehiculo?.id === vehiculo.id ? 2 : 0}
+                        sx={{
+                          cursor: "pointer",
+                          border: selectedVehiculo?.id === vehiculo.id ? "2px solid #d84315" : "1px solid #e0e0e0",
+                          bgcolor: selectedVehiculo?.id === vehiculo.id ? "#d84315" + "08" : "white",
+                          "&:hover": { borderColor: "#d84315", bgcolor: "#f5f5f5" },
+                          transition: "all 0.2s",
+                        }}
+                        onClick={() => handleVehiculoSelect(vehiculo)}
+                      >
+                        <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <Box>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ color: "#d84315", fontWeight: 700, fontSize: "0.875rem" }}
+                              >
+                                {vehiculo.patente}
+                              </Typography>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{ color: "#171717", fontWeight: 600, fontSize: "0.75rem" }}
+                              >
+                                {vehiculo.marca} {vehiculo.modelo}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                Año: {vehiculo.año} | Km: {vehiculo.kilometraje?.toLocaleString()}
+                              </Typography>
+                            </Box>
+                            {selectedVehiculo?.id === vehiculo.id && <CheckCircle size={16} color="#d84315" />}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
                   ))}
-                </div>
+                </Grid>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )
 
       case 2:
         return (
-          <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-[#d84315]" />
-                  <h2 className="text-lg font-semibold text-[#171717]">Elegir Servicios</h2>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 0}
-                    size="sm"
-                    className="h-8 px-3 text-sm border border-gray-300 hover:border-[#d84315] hover:text-[#d84315] rounded-lg bg-transparent"
-                  >
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                    Atrás
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    disabled={!canProceed()}
-                    className="bg-[#d84315] hover:bg-[#d84315]/90 h-8 px-3 text-sm rounded-lg"
-                    size="sm"
-                  >
-                    Siguiente
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
+          <Card elevation={2} sx={{ height: 400, display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ p: 3, pb: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: "#d84315", color: "white" }}>
+                  <Building2 size={16} />
+                </Box>
+                <Typography variant="h6" sx={{ color: "#171717", fontWeight: 600 }}>
+                  Sucursal y Empleados
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                Selecciona la sucursal donde se realizará el servicio y los empleados asignados
+              </Typography>
+            </CardContent>
+            <CardContent sx={{ p: 3, flex: 1, overflow: "auto" }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Sucursal *</InputLabel>
+                    <Select
+                      value={formData.sucursalId || ""}
+                      label="Sucursal *"
+                      onChange={(e) => handleSucursalSelect(e.target.value)}
+                      sx={{
+                        borderRadius: 2,
+                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d84315" },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#d84315" },
+                      }}
+                    >
+                      {sucursalesActivas.map((sucursal) => (
+                        <MenuItem key={sucursal.id} value={sucursal.id}>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {sucursal.nombre}
+                            </Typography>
+                            {sucursal.direccion && (
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                {sucursal.direccion}
+                              </Typography>
+                            )}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-              <Button
-                onClick={() => setShowItemDialog(true)}
-                className="bg-[#d84315] hover:bg-[#d84315]/90 h-10 text-sm px-4 rounded-lg"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Servicio
-              </Button>
-            </div>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Empleados Asignados</InputLabel>
+                    <Select
+                      multiple
+                      value={formData.empleados}
+                      label="Empleados Asignados"
+                      onChange={(e) => handleEmpleadosChange(e.target.value)}
+                      disabled={!formData.sucursalId}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {selected.map((empleadoId) => {
+                            const empleado = empleadosActivos.find((e) => e.id === empleadoId)
+                            return (
+                              <Chip
+                                key={empleadoId}
+                                label={`${empleado?.nombre} ${empleado?.apellido}`}
+                                size="small"
+                                sx={{ bgcolor: "#d84315", color: "white" }}
+                              />
+                            )
+                          })}
+                        </Box>
+                      )}
+                      sx={{
+                        borderRadius: 2,
+                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#d84315" },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#d84315" },
+                      }}
+                    >
+                      {empleadosActivos.map((empleado) => (
+                        <MenuItem key={empleado.id} value={empleado.id}>
+                          <Checkbox
+                            checked={formData.empleados.includes(empleado.id)}
+                            sx={{
+                              color: "#d84315",
+                              "&.Mui-checked": { color: "#d84315" },
+                            }}
+                          />
+                          <ListItemText
+                            primary={`${empleado.nombre} ${empleado.apellido}`}
+                            secondary={empleado.cargo}
+                          />
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
 
-            <div className="flex-1 min-h-0">
-              <div className="h-full overflow-y-auto pr-2">
-                {formData.items.length > 0 ? (
-                  <div className="space-y-2">
-                    {formData.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 border border-gray-200 rounded-lg hover:border-[#d84315]/50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 space-y-1">
-                            <h3 className="font-medium text-[#171717]">{item.tipoServicioNombre}</h3>
-                            <p className="text-sm text-muted-foreground">{item.descripcion}</p>
-                            <div className="flex gap-2 flex-wrap">
-                              {item.observaciones && (
-                                <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                                  Obs: {item.observaciones}
-                                </Badge>
-                              )}
-                              {item.notas && (
-                                <Badge variant="outline" className="text-xs px-2 py-0.5">
-                                  Notas: {item.notas}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0 rounded-lg ml-3"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center py-8">
-                      <Wrench className="h-8 w-8 text-[#d84315] mx-auto mb-2" />
-                      <p className="text-sm text-[#d84315] font-medium">Sin Servicios</p>
-                      <p className="text-xs text-muted-foreground">Haz clic en "Agregar Servicio" para comenzar</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+              {selectedSucursal && (
+                <Card elevation={1} sx={{ border: "2px solid #d84315", bgcolor: "#d84315" + "08", mt: 3 }}>
+                  <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                      <Building2 size={16} color="#d84315" />
+                      <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 600 }}>
+                        Sucursal Seleccionada
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      {selectedSucursal.nombre}
+                    </Typography>
+                    {selectedSucursal.direccion && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        {selectedSucursal.direccion}
+                      </Typography>
+                    )}
+                    {selectedSucursal.telefono && (
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        Tel: {selectedSucursal.telefono}
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </CardContent>
+          </Card>
         )
 
       case 3:
         return (
-          <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#d84315]" />
-                  <h2 className="text-lg font-semibold text-[#171717]">Detalles y Confirmación</h2>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 0}
-                    size="sm"
-                    className="h-8 px-3 text-sm border border-gray-300 hover:border-[#d84315] hover:text-[#d84315] rounded-lg bg-transparent"
-                  >
-                    <ArrowLeft className="h-3 w-3 mr-1" />
-                    Atrás
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!canProceed() || loading}
-                    className="bg-[#d84315] hover:bg-[#d84315]/90 h-8 px-3 text-sm rounded-lg"
-                    size="sm"
-                  >
-                    {loading ? "Creando..." : "Crear Servicio"}
-                    <CheckCircle className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <Card elevation={2} sx={{ height: 400, display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ p: 3, pb: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: "#d84315", color: "white" }}>
+                  <Wrench size={16} />
+                </Box>
+                <Typography variant="h6" sx={{ color: "#171717", fontWeight: 600 }}>
+                  Elegir Servicios
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                Agrega los servicios que realizarás en este vehículo
+              </Typography>
+            </CardContent>
+            <CardContent sx={{ p: 3, flex: 1, overflow: "auto" }}>
+              <Button
+                variant="contained"
+                startIcon={<Plus size={16} />}
+                onClick={() => setShowItemDialog(true)}
+                sx={{
+                  bgcolor: "#d84315",
+                  "&:hover": { bgcolor: "#d84315" + "dd" },
+                  mb: 2,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Agregar Servicio
+              </Button>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="observaciones" className="text-sm font-medium">
-                    Observaciones Generales
-                  </Label>
-                  <Textarea
-                    id="observaciones"
-                    placeholder="Observaciones adicionales..."
-                    value={formData.observaciones}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))}
-                    className="h-20 border border-gray-300 focus:border-[#d84315] rounded-lg text-sm"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="precio" className="text-sm font-medium">
-                    Precio de Referencia
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-muted-foreground text-sm">$</span>
-                    <Input
-                      id="precio"
-                      type="number"
-                      placeholder="0"
-                      value={formData.precioReferencia}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, precioReferencia: Number(e.target.value) }))}
-                      className="pl-8 h-10 border border-gray-300 focus:border-[#d84315] rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 border border-[#d84315] bg-[#d84315]/5 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle className="h-4 w-4 text-[#d84315]" />
-                  <h3 className="font-medium text-[#171717]">Resumen del Servicio</h3>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="h-3 w-3 text-[#d84315]" />
-                      <span className="font-medium">Cliente:</span>
-                    </div>
-                    <p className="ml-5">
-                      {selectedCliente?.nombre} {selectedCliente?.apellido}
-                    </p>
-                    <p className="text-xs text-muted-foreground ml-5">
-                      DNI: {selectedCliente?.dni || "No especificado"}
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Car className="h-3 w-3 text-[#d84315]" />
-                      <span className="font-medium">Vehículo:</span>
-                    </div>
-                    <p className="ml-5">{selectedVehiculo?.patente}</p>
-                    <p className="text-xs text-muted-foreground ml-5">
-                      {selectedVehiculo?.marca} {selectedVehiculo?.modelo}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-[#d84315]/20">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Wrench className="h-3 w-3 text-[#d84315]" />
-                    <span className="font-medium text-sm">Servicios:</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {formData.items.length} item(s)
-                    </Badge>
-                  </div>
-                  {formData.precioReferencia > 0 && (
-                    <p className="text-sm font-medium text-[#d84315] ml-5">
-                      Precio de Referencia: ${formData.precioReferencia.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {formData.items.length > 0 ? (
+                  formData.items.map((item) => (
+                    <Card key={item.id} elevation={1} sx={{ border: "1px solid #e0e0e0" }}>
+                      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 600, mb: 0.5 }}>
+                              {item.tipoServicioNombre}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1 }}>
+                              {item.descripcion}
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                              {item.observaciones && (
+                                <Chip
+                                  label={`Obs: ${item.observaciones}`}
+                                  size="small"
+                                  variant="filled"
+                                  sx={{ bgcolor: "#f5f5f5", color: "#171717", fontSize: "0.7rem" }}
+                                />
+                              )}
+                              {item.notas && (
+                                <Chip
+                                  label={`Notas: ${item.notas}`}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ borderColor: "#e0e0e0", color: "#171717", fontSize: "0.7rem" }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleRemoveItem(item.id)}
+                            sx={{ color: "#f44336", "&:hover": { bgcolor: "#f44336" + "10" } }}
+                          >
+                            <Trash2 size={14} />
+                          </IconButton>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Typography variant="body2" sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+                    No hay servicios agregados aún
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
         )
 
       case 4:
         return (
-          <div className="flex items-center justify-center h-full -mt-20">
-            <div className="border border-green-200 bg-green-50 rounded-lg p-6 text-center max-w-md w-full">
-              <div className="flex flex-col items-center space-y-3">
-                <div className="p-3 rounded-full bg-green-100">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-xl font-semibold text-[#171717]">¡Servicio Creado!</h2>
-                  <p className="text-sm text-muted-foreground">El servicio ha sido registrado correctamente</p>
-                </div>
-                <Button
-                  onClick={handleReset}
-                  className="bg-[#d84315] hover:bg-[#d84315]/90 h-9 text-sm px-4 rounded-lg mt-2"
-                >
-                  Crear Otro Servicio
-                </Button>
-              </div>
-            </div>
-          </div>
+          <Card elevation={2} sx={{ height: 400, display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ p: 3, pb: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                <Box sx={{ p: 1, borderRadius: 2, bgcolor: "#d84315", color: "white" }}>
+                  <FileText size={16} />
+                </Box>
+                <Typography variant="h6" sx={{ color: "#171717", fontWeight: 600 }}>
+                  Detalles y Confirmación
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                Completa los detalles finales del servicio
+              </Typography>
+            </CardContent>
+            <CardContent sx={{ p: 3, flex: 1, overflow: "auto" }}>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="caption" sx={{ color: "#171717", fontWeight: 600, display: "block", mb: 1 }}>
+                    Observaciones Generales
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    size="small"
+                    placeholder="Observaciones adicionales..."
+                    value={formData.observaciones}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": { borderColor: "#d84315" },
+                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="caption" sx={{ color: "#171717", fontWeight: 600, display: "block", mb: 1 }}>
+                    Precio de Referencia
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    placeholder="0"
+                    value={formData.precioReferencia}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, precioReferencia: Number(e.target.value) }))}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        "&:hover fieldset": { borderColor: "#d84315" },
+                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                      },
+                    }}
+                  />
+                </Grid>
+              </Grid>
+
+              <Card elevation={0} sx={{ border: "1px solid #d84315", bgcolor: "#d84315" + "08", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: "#d84315", fontWeight: 600, mb: 2 }}>
+                  Resumen del Servicio
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>Cliente:</strong> {selectedCliente?.nombre} {selectedCliente?.apellido}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>DNI:</strong> {selectedCliente?.dni || "No especificado"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>Vehículo:</strong> {selectedVehiculo?.patente}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>Modelo:</strong> {selectedVehiculo?.marca} {selectedVehiculo?.modelo}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>Sucursal:</strong> {selectedSucursal?.nombre}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: "block" }}>
+                      <strong>Empleados:</strong>{" "}
+                      {formData.empleados.length > 0
+                        ? formData.empleados
+                            .map((empId) => {
+                              const emp = empleadosActivos.find((e) => e.id === empId)
+                              return `${emp?.nombre} ${emp?.apellido}`
+                            })
+                            .join(", ")
+                        : "Ninguno asignado"}
+                    </Typography>
+                  </Grid>
+                </Grid>
+                <Divider sx={{ my: 1, borderColor: "#d84315" + "30" }} />
+                <Typography variant="caption" sx={{ display: "block" }}>
+                  <strong>Servicios:</strong> {formData.items.length} item(s)
+                </Typography>
+                {formData.precioReferencia > 0 && (
+                  <Typography variant="caption" sx={{ display: "block", color: "#d84315", fontWeight: 600 }}>
+                    Precio de Referencia: ${formData.precioReferencia.toLocaleString()}
+                  </Typography>
+                )}
+              </Card>
+            </CardContent>
+          </Card>
+        )
+
+      case 5:
+        return (
+          <Card elevation={2} sx={{ textAlign: "center", p: 4 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <Box sx={{ p: 2, borderRadius: "50%", bgcolor: "#4caf50" + "20" }}>
+                <CheckCircle size={48} color="#4caf50" />
+              </Box>
+              <Typography variant="h4" sx={{ color: "#171717", fontWeight: 700 }}>
+                ¡Servicio Creado Exitosamente!
+              </Typography>
+              <Typography variant="body1" sx={{ color: "text.secondary", maxWidth: 400 }}>
+                El servicio ha sido registrado correctamente en el sistema
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={handleReset}
+                sx={{
+                  bgcolor: "#d84315",
+                  "&:hover": { bgcolor: "#d84315" + "dd" },
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  mt: 1,
+                }}
+              >
+                Crear Otro Servicio
+              </Button>
+            </Box>
+          </Card>
         )
 
       default:
@@ -629,65 +841,113 @@ const ServiciosPage = () => {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col overflow-hidden -mt-5">
-      {/* Fixed Header */}
-      <div className="flex-shrink-0 bg-white border-b-2 border-[#d84315]/10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="text-center space-y-2 mb-6">
-            <h1 className="text-3xl font-bold text-[#171717] -mb-7 -mt-2">Crear Nuevo Servicio</h1>
-          </div>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ color: "#171717", fontWeight: 700, mt: -3, mb: -3, textAlign: "center" }}>
+          Crear Nuevo Servicio
+        </Typography>
+      </Box>
 
-          {/* Progress Steps - Only show when not in success state */}
-          {activeStep < 4 && (
-            <Card className="border-2 border-[#d84315]/20 shadow-lg rounded-xl bg-white">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  {steps.map((step, index) => {
-                    const Icon = step.icon
-                    const isActive = index === activeStep
-                    const isCompleted = index < activeStep
+      {activeStep < 5 && (
+        <Card elevation={2} sx={{ mb: 2 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Stepper activeStep={activeStep} alternativeLabel>
+              {steps.map((step, index) => {
+                const Icon = step.icon
+                return (
+                  <Step key={step.id}>
+                    <StepLabel
+                      StepIconComponent={() => (
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "2px solid",
+                            borderColor: index <= activeStep ? "#d84315" : "#e0e0e0",
+                            bgcolor: index < activeStep ? "#d84315" : index === activeStep ? "#d84315" + "10" : "white",
+                            color: index < activeStep ? "white" : index === activeStep ? "#d84315" : "#9e9e9e",
+                          }}
+                        >
+                          {index < activeStep ? <CheckCircle size={16} /> : <Icon size={16} />}
+                        </Box>
+                      )}
+                      sx={{
+                        "& .MuiStepLabel-label": {
+                          color: index <= activeStep ? "#d84315" : "#9e9e9e",
+                          fontWeight: index === activeStep ? 600 : 400,
+                        },
+                      }}
+                    >
+                      {step.title}
+                    </StepLabel>
+                  </Step>
+                )
+              })}
+            </Stepper>
+          </CardContent>
+        </Card>
+      )}
 
-                    return (
-                      <div key={step.id} className="flex items-center">
-                        <div
-                          className={`flex items-center justify-center w-10 h-10 rounded-full border-3 transition-all duration-200 ${
-                            isCompleted
-                              ? "bg-[#d84315] border-[#d84315] text-white shadow-lg"
-                              : isActive
-                                ? "border-[#d84315] text-[#d84315] bg-[#d84315]/10 shadow-md"
-                                : "border-gray-300 text-gray-400"
-                          }`}
-                        >
-                          {isCompleted ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
-                        </div>
-                        <span
-                          className={`ml-3 text-sm font-semibold transition-colors duration-200 ${
-                            isActive ? "text-[#d84315]" : isCompleted ? "text-[#171717]" : "text-gray-400"
-                          }`}
-                        >
-                          {step.title}
-                        </span>
-                        {index < steps.length - 1 && <Separator className="w-12 mx-6" />}
-                      </div>
-                    )
-                  })}
-                </div>
-                <Progress
-                  value={(activeStep / (steps.length - 1)) * 100}
-                  className="h-2 bg-gray-200 rounded-full overflow-hidden"
-                />
-              </CardContent>
-            </Card>
+      <Box sx={{ mb: 3 }}>{renderStepContent()}</Box>
+
+      {activeStep < 5 && (
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowLeft size={16} />}
+            onClick={handleBack}
+            disabled={activeStep === 0}
+            sx={{
+              borderColor: "#e0e0e0",
+              color: "#171717",
+              "&:hover": { borderColor: "#d84315", color: "#d84315" },
+              borderRadius: 2,
+              textTransform: "none",
+            }}
+          >
+            Atrás
+          </Button>
+
+          {activeStep < steps.length - 1 ? (
+            <Button
+              variant="contained"
+              endIcon={<ArrowRight size={16} />}
+              onClick={handleNext}
+              disabled={!canProceed()}
+              sx={{
+                bgcolor: "#d84315",
+                "&:hover": { bgcolor: "#d84315" + "dd" },
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Siguiente
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              endIcon={<CheckCircle size={16} />}
+              onClick={handleSubmit}
+              disabled={!canProceed() || loading}
+              sx={{
+                bgcolor: "#d84315",
+                "&:hover": { bgcolor: "#d84315" + "dd" },
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              {loading ? "Creando..." : "Crear Servicio"}
+            </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      )}
 
-      {/* Main Content Area - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-5 py-5 h-full">{renderStepContent()}</div>
-      </div>
-
-      {/* Modals */}
       <AgregarServicioModal
         isOpen={showItemDialog}
         onClose={() => setShowItemDialog(false)}
@@ -695,43 +955,51 @@ const ServiciosPage = () => {
         tiposServicios={tiposServicios}
       />
 
-      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
-        <DialogContent className="sm:max-w-md rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3 text-xl">
-              <Keyboard className="h-6 w-6" />
-              Atajos de Teclado
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-base">Siguiente paso</span>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Ctrl + →
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-base">Paso anterior</span>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Ctrl + ←
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-base">Crear servicio</span>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Ctrl + Enter
-              </Badge>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-base">Ver atajos</span>
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Ctrl + /
-              </Badge>
-            </div>
-          </div>
+      <Dialog open={showShortcuts} onClose={() => setShowShortcuts(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pb: 1 }}>
+          <Keyboard size={20} />
+          Atajos de Teclado
+          <IconButton onClick={() => setShowShortcuts(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
+            <X size={20} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="body2">Avanzar paso (si es válido)</Typography>
+              <Chip label="Enter" variant="outlined" size="small" />
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="body2">Siguiente paso</Typography>
+              <Chip label="Ctrl + →" variant="outlined" size="small" />
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="body2">Paso anterior</Typography>
+              <Chip label="Ctrl + ←" variant="outlined" size="small" />
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="body2">Crear servicio</Typography>
+              <Chip label="Ctrl + Enter" variant="outlined" size="small" />
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="body2">Ver atajos</Typography>
+              <Chip label="Ctrl + /" variant="outlined" size="small" />
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   )
 }
 

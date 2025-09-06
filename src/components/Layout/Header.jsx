@@ -3,126 +3,293 @@
 import { useState } from "react"
 import { useAuth } from "../../contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
-import { Button } from "../ui/button"
-import { Avatar, AvatarFallback } from "../ui/avatar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
-import { Badge } from "../ui/badge"
-import ChangePasswordModal from "../Auth/ChangePasswordModal"
-import { Menu, User, Lock, LogOut, Settings } from "lucide-react"
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  Box,
+  Chip,
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+} from "@mui/material"
+import {
+  Menu as MenuIcon,
+  Person as PersonIcon,
+  Lock as LockIcon,
+  Logout as LogoutIcon,
+  Settings as SettingsIcon,
+} from "@mui/icons-material"
+import ChangePasswordModal from "../auth/ChangePasswordModal"
 
 function Header({ onMenuClick }) {
   const { user, logout, isAdmin } = useAuth()
+  const [anchorEl, setAnchorEl] = useState(null)
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const navigate = useNavigate()
 
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
   const handleChangePassword = () => {
     setChangePasswordOpen(true)
+    handleMenuClose()
   }
 
   const handleProfileClick = () => {
     navigate("/configuracion?tab=profile")
+    handleMenuClose()
   }
 
   const handleLogout = () => {
     logout()
+    handleMenuClose()
   }
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100 shadow-sm flex-shrink-0 h-16">
-        <div className="flex items-center justify-between px-6 h-full">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onMenuClick}
-              className="lg:hidden p-2 hover:bg-gray-50 rounded-lg transition-colors"
+      <AppBar
+        position="static"
+        elevation={2}
+        sx={{
+          bgcolor: "white",
+          borderBottom: "2px solid #e0e0e0",
+          height: 80,
+        }}
+      >
+        <Toolbar sx={{ height: "100%", px: 3 }}>
+          <IconButton
+            edge="start"
+            onClick={onMenuClick}
+            sx={{
+              mr: 2,
+              display: { lg: "none" },
+              color: "#666",
+              bgcolor: "rgba(216, 67, 21, 0.1)",
+              "&:hover": {
+                bgcolor: "rgba(216, 67, 21, 0.2)",
+              },
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          <Box sx={{ flexGrow: 1, display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 3 }}>
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: "#171717",
+                  mb: 0.5,
+                }}
+              >
+                Sistema de Gestión
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#666",
+                  display: { xs: "none", md: "block" },
+                }}
+              >
+                {new Date().toLocaleDateString("es-AR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2 }}>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#171717" }}>
+                  {user?.nombre || "Usuario"}
+                </Typography>
+                <Chip
+                  label={isAdmin() ? "Administrador" : "Empleado"}
+                  size="small"
+                  sx={{
+                    bgcolor: "rgba(216, 67, 21, 0.1)",
+                    color: "#d84315",
+                    border: "1px solid rgba(216, 67, 21, 0.3)",
+                    fontWeight: "medium",
+                    fontSize: "0.75rem",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
+              <Avatar
+                sx={{
+                  bgcolor: "#d84315",
+                  width: 48,
+                  height: 48,
+                  fontWeight: "bold",
+                  fontSize: "1.2rem",
+                  boxShadow: 2,
+                }}
+              >
+                {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
+              </Avatar>
+            </IconButton>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              PaperProps={{
+                elevation: 8,
+                sx: {
+                  mt: 1.5,
+                  minWidth: 280,
+                  borderRadius: 2,
+                  border: "1px solid rgba(216, 67, 21, 0.2)",
+                },
+              }}
+              transformOrigin={{ horizontal: "right", vertical: "top" }}
+              anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
-              <Menu className="h-5 w-5 text-gray-600" />
-            </Button>
-
-            <div className="hidden sm:block">
-              <div className="flex items-center space-x-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Sistema de Gestión</h2>
-                  <p className="text-xs text-gray-500 hidden md:block -mt-4">
-                    {new Date().toLocaleDateString("es-AR", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900 -mb-1">{user?.nombre || "Usuario"}</p>
-                <Badge variant="outline" className={`text-xs border-[#d84315] text-[#d84315] bg-[#d84315]/5`}>
-                  {isAdmin() ? "Administrador" : "Empleado"}
-                </Badge>
-              </div>
-            </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-gray-50">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-[#d84315] text-white font-medium">
-                      {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
+              <Paper sx={{ p: 3, bgcolor: "rgba(216, 67, 21, 0.05)" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: "#d84315",
+                      width: 56,
+                      height: 56,
+                      fontWeight: "bold",
+                      fontSize: "1.4rem",
+                    }}
+                  >
+                    {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
                   </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64" align="end" forceMount>
-                <div className="flex items-center justify-start gap-3 p-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-[#d84315] text-white font-medium text-lg">
-                      {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col space-y-1">
-                    <p className="font-medium text-gray-900 -mb-1">{user?.nombre || "Usuario"}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
-                    <Badge variant="outline" className="text-xs w-fit border-[#d84315] text-[#d84315] bg-[#d84315]/5">
-                      {isAdmin() ? "Administrador" : "Empleado"}
-                    </Badge>
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-gray-50">
-                  <User className="mr-3 h-4 w-4 text-gray-500" />
-                  <span>Mi Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleChangePassword} className="hover:bg-gray-50">
-                  <Lock className="mr-3 h-4 w-4 text-gray-500" />
-                  <span>Cambiar Contraseña</span>
-                </DropdownMenuItem>
-                {isAdmin() && (
-                  <DropdownMenuItem className="hover:bg-gray-50">
-                    <Settings className="mr-3 h-4 w-4 text-gray-500" />
-                    <span>Configuración</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:bg-red-50">
-                  <LogOut className="mr-3 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#171717" }}>
+                      {user?.nombre || "Usuario"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#666", mb: 1 }}>
+                      {user?.email}
+                    </Typography>
+                    <Chip
+                      label={isAdmin() ? "Administrador" : "Empleado"}
+                      size="small"
+                      sx={{
+                        bgcolor: "white",
+                        color: "#d84315",
+                        border: "1px solid rgba(216, 67, 21, 0.3)",
+                        fontWeight: "medium",
+                      }}
+                    />
+                  </Box>
+                </Box>
+              </Paper>
+
+              <Divider sx={{ my: 1 }} />
+
+              <MenuItem
+                onClick={handleProfileClick}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  "&:hover": {
+                    bgcolor: "rgba(216, 67, 21, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <PersonIcon sx={{ color: "#d84315" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Mi Perfil"
+                  primaryTypographyProps={{
+                    fontWeight: "medium",
+                  }}
+                />
+              </MenuItem>
+
+              <MenuItem
+                onClick={handleChangePassword}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  "&:hover": {
+                    bgcolor: "rgba(216, 67, 21, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <LockIcon sx={{ color: "#d84315" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Cambiar Contraseña"
+                  primaryTypographyProps={{
+                    fontWeight: "medium",
+                  }}
+                />
+              </MenuItem>
+
+              {isAdmin() && (
+                <MenuItem
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    "&:hover": {
+                      bgcolor: "rgba(216, 67, 21, 0.1)",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <SettingsIcon sx={{ color: "#d84315" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Configuración"
+                    primaryTypographyProps={{
+                      fontWeight: "medium",
+                    }}
+                  />
+                </MenuItem>
+              )}
+
+              <Divider sx={{ my: 1 }} />
+
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  color: "#d32f2f",
+                  "&:hover": {
+                    bgcolor: "rgba(211, 47, 47, 0.1)",
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <LogoutIcon sx={{ color: "#d32f2f" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Cerrar Sesión"
+                  primaryTypographyProps={{
+                    fontWeight: "medium",
+                  }}
+                />
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
       <ChangePasswordModal open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} />
     </>
