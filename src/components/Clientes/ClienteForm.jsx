@@ -36,12 +36,7 @@ const clienteSchema = yup.object({
     .required("El apellido es obligatorio")
     .min(2, "El apellido debe tener al menos 2 caracteres")
     .max(50, "El apellido no puede exceder 50 caracteres"),
-  dni: yup
-    .string()
-    .nullable()
-    .matches(/^\d{7,8}$/, "El DNI debe tener 7 u 8 dígitos"),
   telefono: yup.string().nullable(),
-  direccion: yup.string().nullable().min(5, "La dirección debe tener al menos 5 caracteres"),
 })
 
 const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false }) => {
